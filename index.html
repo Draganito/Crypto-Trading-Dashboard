@@ -1,0 +1,2971 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Cryptocurrency Chart</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                background-color: #191a20;
+                color: #b0b0b0;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+            .container {
+                display: flex;
+                flex-direction: row;
+                height: 80vh;
+                width: 100vw;
+                position: relative;
+            }
+            #app-container {
+                width: 80%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                overflow: visible;
+                position: relative;
+                box-sizing: border-box;
+                margin: 0;
+                background-color: #191a20;
+            }
+            #area2 {
+                width: 20%;
+                height: 100vh;
+                background-color: #2a2a2a;
+                border-left: 1px solid #444444;
+                padding: 10px;
+                box-sizing: border-box;
+                overflow-y: auto;
+                position: absolute;
+                right: 0;
+                top: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            #area3 {
+                width: 80%;
+                height: 20vh;
+                background-color: #2a2a2a;
+                border-top: 1px solid #444444;
+                padding: 10px;
+                box-sizing: border-box;
+                overflow-y: auto;
+            }
+            #controlBar {
+                width: 100%;
+                background-color: #2a2a2a;
+                padding: 10px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+            #controlBar select {
+                padding: 5px;
+                font-size: 16px;
+                background-color: #3a3a3a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 4px;
+            }
+            #intervalSelect {
+                width: 150px;
+            }
+            #symbolSelect {
+                width: 200px;
+            }
+            input[type="text"],
+            input[type="number"] {
+                padding: 5px;
+                font-size: 16px;
+                background-color: #3a3a3a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 4px;
+                margin-bottom: 10px;
+                width: calc(100% - 12px);
+            }
+            button {
+                padding: 5px 10px;
+                font-size: 16px;
+                background-color: #3a3a3a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 4px;
+                cursor: pointer;
+                width: 100%;
+            }
+            button:hover {
+                background-color: #4a4a4a;
+            }
+            #openLongButton {
+                background-color: #2dbd85;
+                border-color: #2dbd85;
+            }
+            #openLongButton:hover {
+                background-color: #3ad69a;
+            }
+            #openShortButton {
+                background-color: #f6465d;
+                border-color: #f6465d;
+            }
+            #openShortButton:hover {
+                background-color: #f85f73;
+            }
+            #ohlcInfo {
+                color: #ffffff;
+                font-size: 16px;
+                margin-left: auto;
+                margin-right: 20px;
+                white-space: nowrap;
+            }
+            #dailyChangeInfo {
+                color: #ffffff;
+                font-size: 16px;
+                white-space: nowrap;
+                margin-right: 10px;
+            }
+            #balanceInfo {
+                color: #ffffff;
+                font-size: 16px;
+                white-space: nowrap;
+                margin-bottom: 10px;
+            }
+            #loading {
+                display: none;
+                color: #cccccc;
+                font-size: 16px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            h3 {
+                margin: 10px 0;
+                color: #ffffff;
+                font-size: 16px;
+            }
+            .tab-nav {
+                display: flex;
+                border-bottom: 1px solid #444444;
+                margin-bottom: 10px;
+            }
+            .tab-button {
+                flex: 1;
+                padding: 10px;
+                background-color: #2a2a2a;
+                color: #ffffff;
+                border: none;
+                border-bottom: 2px solid transparent;
+                cursor: pointer;
+                font-size: 16px;
+                text-align: center;
+            }
+            .tab-button:hover {
+                background-color: #4a4a4a;
+            }
+            .tab-button.active {
+                border-bottom: 2px solid #ffffff;
+                background-color: #3a3a3a;
+            }
+            .tab-content {
+                flex-grow: 1;
+            }
+            .tab-pane {
+                display: none;
+                flex-direction: column;
+                height: 100%;
+            }
+            .tab-pane.active {
+                display: flex;
+            }
+            .spacer {
+                flex-grow: 1;
+            }
+            #openTradesTable {
+                width: 100%;
+                border-collapse: collapse;
+                color: #ffffff;
+                font-size: 14px;
+            }
+            #openTradesTable th,
+            #openTradesTable td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #444444;
+            }
+            #openTradesTable th {
+                background-color: #3a3a3a;
+            }
+            #openTradesTable td button {
+                width: auto;
+                padding: 5px;
+                font-size: 14px;
+            }
+            .input-container {
+                margin-bottom: 10px;
+            }
+            .input-container label {
+                display: block;
+                color: #ffffff;
+                font-size: 14px;
+                margin-bottom: 5px;
+            }
+            .input-container input[type="number"] {
+                width: 100%;
+                padding: 5px;
+                background-color: #3a3a3a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 4px;
+            }
+            .trade-buttons {
+                display: flex;
+                gap: 10px;
+            }
+            .trade-buttons button {
+                width: 50%;
+            }
+            .input-container span {
+                color: #ffffff;
+                font-size: 16px;
+                display: inline-block;
+                padding: 5px;
+            }
+            #tradeMessages, #settingsMessages, #scriptMessages {
+                color: #f6465d;
+                font-size: 14px;
+                padding: 10px;
+                background-color: #2a2a2a;
+            }
+            #chart-container {
+                width: 100%;
+                height: calc(100% - 60px);
+                display: flex;
+                flex-direction: column;
+            }
+            #bitcoinChart, #obvMacdChart {
+                width: 100%;
+            }
+            #indicatorControls {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                color: #ffffff;
+                font-size: 16px;
+                margin-top: 10px;
+            }
+            #indicatorControls label {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .success-message {
+                color: #2dbd85 !important;
+            }
+            .checkbox-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 10px 0;
+                color: #ffffff;
+            }
+            .api-indicator {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background-color: grey;
+                margin-left: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div id="app-container">
+                <div id="controlBar">
+                    <div id="dailyChangeInfo"></div>
+                    <div id="ohlcInfo"></div>
+                </div>
+                <div id="loading">Loading data...</div>
+                <div id="chart-container">
+                    <canvas id="bitcoinChart"></canvas>
+                    <canvas id="obvMacdChart"></canvas>
+                </div>
+            </div>
+            <div id="area2">
+                <div class="tab-nav">
+                    <button class="tab-button active" data-tab="trade">
+                        Trade
+                    </button>
+                    <button class="tab-button" data-tab="settings">
+                        Settings
+                    </button>
+                    <button class="tab-button" data-tab="script">
+                        Script
+                    </button>
+                </div>
+                <div class="tab-content">
+                    <div id="trade" class="tab-pane active">
+                        <div id="balanceInfo">Balance: 1000.00 USDT (Test)</div>
+                        <div class="input-container">
+                            <label>Risk (%): <span id="riskValue">5%</span></label>
+                            <input type="number" id="riskInput" min="0" max="100" value="5" step="0.1">
+                            <label>Risk Amount (USDT): <span id="riskAmountDisplay">50.00</span></label>
+                        </div>
+                        <div class="input-container">
+                            <label>Leverage (x): <span id="leverageValue">10x</span></label>
+                            <input type="number" id="leverageInput" min="1" value="10" step="1">
+                            <label>Position Size (USDT): <span id="positionSizeInput">500.00</span></label>
+                        </div>
+                        <div class="input-container">
+                            <label>Liquidation Price (Long/Short): <span id="liqPriceDisplay">- / -</span></label>
+                        </div>
+                        <div class="trade-buttons">
+                            <button id="openLongButton">Open Long</button>
+                            <button id="openShortButton">Open Short</button>
+                        </div>
+                        <div class="spacer"></div>
+                        <div id="tradeMessages"></div>
+                    </div>
+                    <div id="settings" class="tab-pane">
+                        <h3>API Settings</h3>
+                        <input type="text" id="apiKey" placeholder="API Key" />
+                        <input
+                            type="text"
+                            id="apiSecret"
+                            placeholder="API Secret"
+                        />
+                        <button id="saveApiButton">Save API</button>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="isolatedModeCheckbox" checked>
+                            <label for="isolatedModeCheckbox">Use Isolated Margin Mode</label>
+                        </div>
+                        <div id="indicatorControls">
+                            <h3>Indicator Settings</h3>
+                        </div>
+                        <div id="apiFetchIndicators">
+                            <h3>API Fetch Indicators</h3>
+                            <div>Live Candle Fetch: <span id="liveCandleIndicator" class="api-indicator"></span></div>
+                            <div>Mark Price Fetch: <span id="markPriceIndicator" class="api-indicator"></span></div>
+                        </div>
+                        <div class="spacer"></div>
+                        <div id="settingsMessages"></div>
+                    </div>
+                    <div id="script" class="tab-pane">
+                        <h3>Script Editor</h3>
+                        <textarea id="scriptInput" placeholder="Enter your script here, e.g. if(rsi>50&lastclose>sma55;long(1%risk@50x,rr=5);donothing)" style="width:100%; height:300px; background-color: #3a3a3a; color: #ffffff; border: 1px solid #444444; border-radius: 4px; font-size: 16px; padding: 10px;"></textarea>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="loopCheckbox">
+                            <label for="loopCheckbox">Loop</label>
+                        </div>
+                        <button id="executeScript">Execute Script</button>
+                        <div class="spacer"></div>
+                        <div id="scriptMessages"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="area3">
+            <h3>Open Positions</h3>
+            <table id="openTradesTable">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Side</th>
+                        <th>Price</th>
+                        <th>Notional</th>
+                        <th>Time</th>
+                        <th>Unrealized Profit</th>
+                        <th>Liquidation Price</th>
+                        <th>SL Price</th>
+                        <th>TP Price</th>
+                        <th>Leverage</th>
+                        <th>Margin Type</th>
+                        <th>Isolated Margin</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="openTradesBody"></tbody>
+            </table>
+        </div>
+
+        <script>
+            let selectedIndicator = 'rsi';
+            let liqLong = null; // Neue globale Variable für Liq Price Long
+            let liqShort = null; // Neue globale Variable für Liq Price Short
+            let activeLoopInterval = null; // Neue globale Variable für den Loop-Interval
+
+            // ------------------ Central CONFIG (new: All constants centralized for easy changes) ------------------
+            const CONFIG = Object.freeze({
+                BASE_URL: "https://fapi.binance.com",
+                FALLBACK_SYMBOLS: ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"],
+                MAX_LEVERAGE: 10,
+                DEFAULT_CAPITAL: 1000,
+                IS_HEDGE_MODE: true,
+                SMA_PERIOD: 55,
+                RSI_PERIOD: 14,
+                AVG_VOLUME_PERIOD: 14,
+                DATA_LIMIT: 200,
+                MIN_CANDLES: 10,
+                MAX_CANDLES: 200,
+                MIN_CANDLE_WIDTH: 1,
+                MIN_GAP: 0.5,
+                MIN_ZOOM: 0.1,
+                MAX_ZOOM: 10,
+                UPDATE_THROTTLE_MS: 100,
+                OBV_MACD: {
+                    PADDING: 0,
+                    OBV_SMOOTH_PERIOD: 14,
+                    DEMA_PERIOD: 9,
+                    SLOW_EMA_PERIOD: 26,
+                    SIGNAL_PERIOD: 9,
+                },
+                MACD: {
+                    FAST_PERIOD: 12,
+                    SLOW_PERIOD: 26,
+                    SIGNAL_PERIOD: 9
+                },
+                PRICE_CACHE_TIMEOUT: 3000 // New: Cache timeout for latest price in ms
+            });
+
+            // ------------------ UtilsModule (new: Extracted utility functions for reusability) ------------------
+            // Dependencies: None
+            const UtilsModule = (function () {
+                /**
+                 * Executes an HTTP request with retry logic.
+                 * @param {string} url - Target URL
+                 * @param {Object} [options={}] - Fetch options
+                 * @param {number} [retries=5] - Maximum retries
+                 * @param {number} [delay=1000] - Delay between retries (ms)
+                 * @returns {Promise<Object>} API response
+                 */
+                async function fetchWithRetry(url, options = {}, retries = 5, delay = 1000) {
+                    for (let i = 0; i < retries; i++) {
+                        try {
+                            const response = await fetch(url, options);
+                            if (response.status === 429) {
+                                console.warn(`Rate limit hit, retrying after ${delay}ms`);
+                                await new Promise((resolve) => setTimeout(resolve, delay));
+                                continue;
+                            }
+                            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            return await response.json();
+                        } catch (error) {
+                            if (i === retries - 1) throw error;
+                            console.warn(`Retry ${i + 1}/${retries} for ${url}`);
+                            await new Promise((resolve) => setTimeout(resolve, delay));
+                        }
+                    }
+                }
+
+                /**
+                 * Formats time for display.
+                 * @param {Date} date - Date
+                 * @param {string} interval - Interval
+                 * @returns {string} Formatted time
+                 */
+                function formatTime(date, interval) {
+                    if (["1d", "3d", "1w", "1M"].includes(interval)) {
+                        return `${date.getDate().toString().padStart(2, "0")}.${(date.getMonth() + 1).toString().padStart(2, "0")}.${date.getFullYear()}`;
+                    }
+                    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+                }
+
+                /**
+                 * Checks if a candle has expired.
+                 * @param {number} timestamp - Candle timestamp
+                 * @param {string} interval - Interval
+                 * @returns {boolean} True if expired
+                 */
+                function isCandleExpired(timestamp, interval) {
+                    const currentTime = Date.now();
+                    const elapsed = currentTime - timestamp;
+                    const intervalMs = {
+                        "1m": 60 * 1000,
+                        "3m": 3 * 60 * 1000,
+                        "5m": 5 * 60 * 1000,
+                        "15m": 15 * 60 * 1000,
+                        "30m": 30 * 60 * 1000,
+                        "1h": 60 * 60 * 1000,
+                        "2h": 2 * 60 * 60 * 1000,
+                        "4h": 4 * 60 * 60 * 1000,
+                        "6h": 6 * 60 * 60 * 1000,
+                        "8h": 8 * 60 * 60 * 1000,
+                        "12h": 12 * 60 * 60 * 1000,
+                        "1d": 24 * 60 * 60 * 1000,
+                        "3d": 3 * 24 * 60 * 60 * 1000,
+                        "1w": 7 * 24 * 60 * 60 * 1000,
+                        "1M": 30 * 24 * 60 * 60 * 1000,
+                    }[interval];
+                    return elapsed >= intervalMs;
+                }
+
+                return Object.freeze({
+                    fetchWithRetry,
+                    formatTime,
+                    isCandleExpired,
+                });
+            })();
+
+            // ------------------ SECTION: EventEmitter ------------------
+            // Dependencies: None
+            /**
+             * Central event system for module communication.
+             * Enables loose coupling between modules.
+             */
+            const EventEmitter = (function () {
+                const listeners = new Map();
+
+                return Object.freeze({
+                    /**
+                     * Registers an event listener.
+                     * @param {string} event - Event name
+                     * @param {Function} callback - Callback function
+                     */
+                    on(event, callback) {
+                        if (!listeners.has(event)) listeners.set(event, []);
+                        listeners.get(event).push(callback);
+                    },
+                    /**
+                     * Triggers an event.
+                     * @param {string|string[]} event - Event name or array of events
+                     * @param {...any} args - Arguments for the callback function
+                     */
+                    emit(event, ...args) {
+                        const events = Array.isArray(event) ? event : [event];
+                        events.forEach((evt) => {
+                            const callbacks = listeners.get(evt) || [];
+                            callbacks.forEach((cb) => cb(...args));
+                        });
+                    },
+                });
+            })();
+
+            // ------------------ ErrorHandlerModule (new: Central error handling) ------------------
+            // Dependencies: UiModule (for showError method)
+            const ErrorHandlerModule = (function () {
+                /**
+                 * Displays an error message and logs it.
+                 * @param {string} message - Error message
+                 * @param {number} [duration=5000] - Display duration in ms
+                 */
+                function handleError(message, duration = 5000) {
+                    console.error(message);
+                    UiModule.showMessage(message, "#f6465d", duration);
+                }
+
+                function handleSuccess(message, duration = 5000) {
+                    console.log(message);
+                    UiModule.showMessage(message, "#2dbd85", duration);
+                }
+
+                return Object.freeze({
+                    handleError,
+                    handleSuccess
+                });
+            })();
+
+            // ------------------ SECTION: VolumeSortModule ------------------
+            // Dependencies: UtilsModule (fetchWithRetry), CONFIG
+            /**
+             * Manages fetching and sorting trading symbols by volume.
+             */
+            const VolumeSortModule = (function () {
+                /**
+                 * Fetches symbols sorted by 24h volume.
+                 * @returns {Promise<Object[]>} Sorted symbol list with {symbol}
+                 */
+                async function fetchSortedSymbols() {
+                    try {
+                        const exchangeInfo = await UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v1/exchangeInfo`);
+                        let symbols = exchangeInfo.symbols
+                            ?.filter((s) => s.contractType === "PERPETUAL" && s.quoteAsset === "USDT")
+                            .map((s) => s.symbol) || [...CONFIG.FALLBACK_SYMBOLS];
+
+                        const tickerData = await UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v1/ticker/24hr`);
+
+                        const symbolData = symbols
+                            .map((symbol) => {
+                                const ticker = tickerData.find((t) => t.symbol === symbol);
+                                const volume = ticker ? parseFloat(ticker.quoteVolume) * (4 / 24) || 0 : 0;
+                                return { symbol, volume };
+                            })
+                            .sort((a, b) => b.volume - a.volume);
+
+                        return symbolData;
+                    } catch (error) {
+                        ErrorHandlerModule.handleError("Failed to fetch sorted symbols: " + error.message);
+                        return CONFIG.FALLBACK_SYMBOLS.map(symbol => ({ symbol })).sort();
+                    }
+                }
+
+                return Object.freeze({
+                    fetchSortedSymbols,
+                });
+            })();
+
+            // ------------------ SECTION: ApiModule ------------------
+            // Dependencies: UtilsModule (fetchWithRetry), CONFIG, CryptoJS (external)
+            /**
+             * Manages Binance API interactions (klines, orders, account data).
+             */
+            const ApiModule = (function () {
+                let apiKey = "";
+                let apiSecret = "";
+                let symbolConstraints = {};
+                let latestPriceCache = new Map(); // Per-symbol cache for latest price
+                let markPriceCache = new Map(); // Per-symbol cache for mark price
+
+                /**
+                 * Sets API credentials.
+                 * @param {string} key - Binance API Key
+                 * @param {string} secret - Binance API Secret
+                 * @private
+                 */
+                function _setCredentials(key, secret) {
+                    apiKey = key;
+                    apiSecret = secret;
+                }
+
+                /**
+                 * Executes a signed API request.
+                 * @param {string} endpoint - API endpoint
+                 * @param {Object} [params={}] - Query parameters
+                 * @param {string} [method="GET"] - HTTP method
+                 * @returns {Promise<Object>} API response
+                 * @private
+                 */
+                async function _signedRequest(endpoint, params = {}, method = "GET") {
+                    if (!apiKey || !apiSecret) {
+                        throw new Error("API credentials missing");
+                    }
+                    const timestamp = Date.now();
+                    const queryString = new URLSearchParams({...params, timestamp}).toString();
+                    const signature = CryptoJS.HmacSHA256(queryString, apiSecret).toString(CryptoJS.enc.Hex);
+                    const url = `${CONFIG.BASE_URL}${endpoint}?${queryString}&signature=${signature}`;
+                    return await UtilsModule.fetchWithRetry(url, {
+                        method,
+                        headers: { "X-MBX-APIKEY": apiKey },
+                    });
+                }
+
+                return Object.freeze({
+                    setCredentials: async (key, secret) => {
+                        _setCredentials(key, secret);
+                        try {
+                            await _signedRequest("/fapi/v2/account");
+                            return true;
+                        } catch (error) {
+                            _setCredentials("", "");
+                            return false;
+                        }
+                    },
+                    fetchKlines: async (symbol, interval, limit) =>
+                        UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`),
+                    fetchLatestPrice: async (symbol) => {
+                        const now = Date.now();
+                        const cached = latestPriceCache.get(symbol);
+                        const useCache = cached && (now - cached.timestamp) < CONFIG.PRICE_CACHE_TIMEOUT;
+                        EventEmitter.emit("fetch-status", { type: 'latest', status: useCache ? 'cache' : 'fetch' });
+                        if (useCache) {
+                            return cached.price;
+                        }
+                        try {
+                            const response = await UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v2/ticker/price?symbol=${symbol}`);
+                            const price = parseFloat(response.price);
+                            if (isNaN(price) || price <= 0 || price >= 1e9) return null;
+                            latestPriceCache.set(symbol, { price, timestamp: now });
+                            return price;
+                        } catch (error) {
+                            ErrorHandlerModule.handleError("Failed to fetch price: " + error.message);
+                            return null;
+                        }
+                    },
+                    fetchMarkPrice: async (symbol) => {
+                        const now = Date.now();
+                        const cached = markPriceCache.get(symbol);
+                        const useCache = cached && (now - cached.timestamp) < CONFIG.PRICE_CACHE_TIMEOUT;
+                        EventEmitter.emit("fetch-status", { type: 'mark', status: useCache ? 'cache' : 'fetch' });
+                        if (useCache) {
+                            return cached.price;
+                        }
+                        try {
+                            const response = await UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v1/premiumIndex?symbol=${symbol}`);
+                            const price = parseFloat(response.markPrice);
+                            if (isNaN(price) || price <= 0 || price >= 1e9) return null;
+                            markPriceCache.set(symbol, { price, timestamp: now });
+                            return price;
+                        } catch (error) {
+                            ErrorHandlerModule.handleError("Failed to fetch mark price: " + error.message);
+                            return null;
+                        }
+                    },
+                    fetchAccount: () => _signedRequest("/fapi/v2/account"),
+                    fetchPositions: () => _signedRequest("/fapi/v2/positionRisk"),
+                    fetchOpenOrders: (symbol = null) => {
+                        const params = symbol ? { symbol } : {};
+                        return _signedRequest("/fapi/v1/openOrders", params);
+                    },
+                    cancelAllOpenOrders: (symbol) => _signedRequest("/fapi/v1/allOpenOrders", { symbol }, "DELETE"),
+                    postOrder: (params) => _signedRequest("/fapi/v1/order", params, "POST"),
+                    setLeverage: (symbol, leverage) =>
+                        _signedRequest("/fapi/v1/leverage", { symbol, leverage }, "POST"),
+                    fetchLeverageBrackets: () => _signedRequest("/fapi/v1/leverageBracket"),
+                    fetchExchangeInfo: () => UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v1/exchangeInfo`),
+                    fetchSymbolConstraints: async () => {
+                        try {
+                            const response = await UtilsModule.fetchWithRetry(`${CONFIG.BASE_URL}/fapi/v1/exchangeInfo`);
+                            symbolConstraints = Object.fromEntries(
+                                response.symbols.map((s) => [
+                                    s.symbol,
+                                    {
+                                        minQty: parseFloat(s.filters.find((f) => f.filterType === "LOT_SIZE")?.minQty || "0.001"),
+                                        stepSize: parseFloat(s.filters.find((f) => f.filterType === "LOT_SIZE")?.stepSize || "0.001"),
+                                        quantityPrecision: s.quantityPrecision,
+                                        minNotional: parseFloat(s.filters.find((f) => f.filterType === "MIN_NOTIONAL")?.notional || "5"),
+                                        pricePrecision: s.pricePrecision,
+                                    },
+                                ])
+                            );
+                            return symbolConstraints;
+                        } catch (error) {
+                            ErrorHandlerModule.handleError("Failed to fetch symbol constraints: " + error.message);
+                            return {};
+                        }
+                    },
+                    getSymbolConstraints: (symbol) => symbolConstraints[symbol] || {
+                        minQty: 0.001,
+                        stepSize: 0.001,
+                        quantityPrecision: 4,
+                        minNotional: 5,
+                        pricePrecision: 2,
+                    },
+                    changeMarginType: (symbol, marginType) =>
+                        _signedRequest("/fapi/v1/marginType", { symbol, marginType }, "POST"),
+                });
+            })();
+
+            // ------------------ SECTION: TradeModule ------------------
+            // Dependencies: ApiModule, EventEmitter, CONFIG, UtilsModule
+            /**
+             * Manages trading logic (positions, leverage, risk).
+             */
+            const TradeModule = (function () {
+                let availableCapital = CONFIG.DEFAULT_CAPITAL;
+                let maxLeverage = CONFIG.MAX_LEVERAGE;
+                let leverageBrackets = {};
+                let symbolPrecisions = {};
+                let symbolConstraints = {};
+                const TAKER_FEE = 0.0004; // 0.04% taker fee for VIP 0
+                let tradeLock = false; // New: Lock to prevent concurrent trades
+
+                const mmrTiers = [
+                    { maxNotional: 100000, maintAmount: 0, mmr: 0.004 },
+                    { maxNotional: 500000, maintAmount: 400, mmr: 0.005 },
+                    { maxNotional: 2500000, maintAmount: 2400, mmr: 0.008 },
+                    { maxNotional: 5000000, maintAmount: 12400, mmr: 0.01 },
+                    { maxNotional: 10000000, maintAmount: 37400, mmr: 0.0125 },
+                    { maxNotional: 20000000, maintAmount: 87400, mmr: 0.015 },
+                    { maxNotional: 50000000, maintAmount: 187400, mmr: 0.02 },
+                    { maxNotional: 100000000, maintAmount: 487400, mmr: 0.025 },
+                    { maxNotional: 200000000, maintAmount: 987400, mmr: 0.05 },
+                    { maxNotional: Infinity, maintAmount: 4987400, mmr: 0.1 },
+                ];
+
+                function getMaintenanceMargin(notional) {
+                    let i = 0;
+                    while (notional > mmrTiers[i].maxNotional && i < mmrTiers.length - 1) {
+                        i++;
+                    }
+                    const tier = mmrTiers[i];
+                    const previousMax = i > 0 ? mmrTiers[i - 1].maxNotional : 0;
+                    return tier.maintAmount + (notional - previousMax) * tier.mmr;
+                }
+
+                function calculateLiquidationPrice(side, entryPrice, leverage, margin) {
+                    const notional = margin * leverage;
+                    const mm = getMaintenanceMargin(notional);
+                    const mmr = mm / notional;
+                    if (side === "LONG") {
+                        return entryPrice * (1 - 1 / leverage + mmr);
+                    } else {
+                        return entryPrice * (1 + 1 / leverage - mmr);
+                    }
+                }
+
+                function _updateLeverageForSymbol(symbol) {
+                    maxLeverage = leverageBrackets[symbol] || CONFIG.MAX_LEVERAGE;
+                    EventEmitter.emit("leverage-updated", maxLeverage);
+                }
+
+                async function _updateCapital() {
+                    try {
+                        const response = await ApiModule.fetchAccount();
+                        const usdtAsset = response.assets?.find((asset) => asset.asset === "USDT");
+                        availableCapital = usdtAsset ? parseFloat(usdtAsset.availableBalance) : CONFIG.DEFAULT_CAPITAL;
+                        EventEmitter.emit("capital-updated", availableCapital);
+                    } catch (error) {
+                        availableCapital = CONFIG.DEFAULT_CAPITAL;
+                        EventEmitter.emit("capital-updated", availableCapital);
+                        ErrorHandlerModule.handleError(`Failed to fetch account balance: ${error.message}`);
+                    }
+                }
+
+                function _calculateQuantity(symbol, positionSize, price, riskAmount, userLeverage, maxLeverage) {
+                    if (!price || price <= 0) {
+                        return { quantity: 0, adjustedPositionSize: 0, usedMargin: 0, leverage: userLeverage, error: "Invalid price" };
+                    }
+
+                    const constraints = symbolConstraints[symbol] || { minQty: 0.001, stepSize: 0.001, quantityPrecision: 4, minNotional: 5 };
+
+                    const minQtyNotional = constraints.minNotional / price;
+                    const effectiveMinQty = Math.max(constraints.minQty, minQtyNotional);
+                    const minPositionSize = effectiveMinQty * price;
+                    const minMargin = minPositionSize / userLeverage;
+
+                    if (minMargin > riskAmount) {
+                        return {
+                            quantity: 0,
+                            adjustedPositionSize: 0,
+                            usedMargin: 0,
+                            leverage: userLeverage,
+                            error: `Position Size 0: Insufficient margin (${riskAmount.toFixed(2)} USDT) to meet minimum quantity (${effectiveMinQty.toFixed(constraints.quantityPrecision)} ${symbol} requiring ${minMargin.toFixed(2)} USDT at ${userLeverage}x leverage)`
+                        };
+                    }
+
+                    let quantity = positionSize / price;
+                    const steps = Math.floor(quantity / constraints.stepSize);
+                    quantity = steps * constraints.stepSize;
+
+                    if (quantity < effectiveMinQty) {
+                        quantity = Math.ceil(effectiveMinQty / constraints.stepSize) * constraints.stepSize;
+                    }
+
+                    quantity = Number(quantity.toFixed(constraints.quantityPrecision));
+
+                    const adjustedPositionSize = quantity * price;
+
+                    let leverage = Math.ceil(adjustedPositionSize / riskAmount) || 1;
+                    leverage = Math.min(leverage, maxLeverage);
+
+                    const usedMargin = adjustedPositionSize / leverage;
+
+                    if (usedMargin > riskAmount) {
+                        return {
+                            quantity: 0,
+                            adjustedPositionSize: 0,
+                            usedMargin: 0,
+                            leverage: userLeverage,
+                            error: `Position Size 0: Required margin (${usedMargin.toFixed(2)} USDT) exceeds risk amount (${riskAmount.toFixed(2)} USDT) for quantity ${quantity.toFixed(constraints.quantityPrecision)} ${symbol} at ${leverage}x leverage`
+                        };
+                    }
+
+                    return { quantity, adjustedPositionSize, usedMargin, leverage, error: null };
+                }
+
+                async function placeOrderWithLock(symbol, side, positionSize, leverage, riskPercent, sl = null, tp = null, rr_ratio = null) {
+                    if (tradeLock) {
+                        console.log("Trade lock active - skipping duplicate trade");
+                        ErrorHandlerModule.handleError("Trade in progress - skipped to prevent duplicate");
+                        return;
+                    }
+                    tradeLock = true;
+                    try {
+                        await _placeOrder(symbol, side, positionSize, leverage, riskPercent, sl, tp, rr_ratio); // Internal call
+                    } finally {
+                        tradeLock = false;
+                    }
+                }
+
+                async function _placeOrder(symbol, side, positionSize, leverage, riskPercent, sl = null, tp = null, rr_ratio = null) {
+                    try {
+                        if (leverage > maxLeverage) {
+                            throw new Error(`Leverage exceeds maximum of ${maxLeverage}x`);
+                        }
+                        const price = await ApiModule.fetchMarkPrice(symbol);
+                        if (!price) {
+                            throw new Error("Failed to fetch price");
+                        }
+                        const riskAmount = (availableCapital * riskPercent) / 100;
+                        const { quantity, adjustedPositionSize, usedMargin, leverage: adjustedLeverage, error } = _calculateQuantity(
+                            symbol, positionSize, price, riskAmount, leverage, maxLeverage
+                        );
+
+                        if (error) {
+                            throw new Error(error);
+                        }
+
+                        const constraints = symbolConstraints[symbol] || { minQty: 0.001, stepSize: 0.001, quantityPrecision: 4, minNotional: 5, pricePrecision: 2 };
+                        const effectiveMinQty = Math.max(constraints.minQty, constraints.minNotional / price);
+                        if (quantity < effectiveMinQty) {
+                            throw new Error(`Quantity below effective minimum (${effectiveMinQty.toFixed(constraints.quantityPrecision)})`);
+                        }
+
+                        if (Math.abs(adjustedPositionSize - positionSize) / positionSize > 0.1 || usedMargin > riskAmount) {
+                            ErrorHandlerModule.handleError(
+                                `Adjusted position size to ${adjustedPositionSize.toFixed(2)} USDT (Margin: ${usedMargin.toFixed(2)} USDT, Leverage: ${adjustedLeverage}x) due to constraints`
+                            );
+                        }
+
+                        const positionSide = side === "BUY" ? "LONG" : "SHORT";
+
+                        // Neue Prüfung: Ob bereits eine Position in dieser Richtung existiert
+                        const positions = await ApiModule.fetchPositions();
+                        const existingPosition = positions.find(p => p.symbol === symbol && p.positionSide === positionSide && Math.abs(parseFloat(p.positionAmt)) > 0);
+                        if (existingPosition) {
+                            throw new Error("Already have an open position in this direction for this symbol.");
+                        }
+
+                        // Neu: Erzwinge Isolated-Mode, wenn Checkbox checked und keine Position offen
+                        const useIsolated = document.getElementById("isolatedModeCheckbox").checked;
+                        if (useIsolated && !existingPosition) {
+                            try {
+                                await ApiModule.changeMarginType(symbol, "ISOLATED");
+                            } catch (error) {
+                                if (error.message.includes("No need to change margin type")) {
+                                    // OK, schon Isolated – ignoriere
+                                } else {
+                                    throw new Error(`Failed to set Isolated mode: ${error.message}`);
+                                }
+                            }
+                        }
+
+                        await ApiModule.setLeverage(symbol, adjustedLeverage);
+
+                        const entryParams = {
+                            symbol,
+                            side,
+                            type: "MARKET",
+                            quantity: quantity.toString(),
+                            positionSide
+                        };
+                        const entryResponse = await ApiModule.postOrder(entryParams);
+
+                        let closeSide = side === "BUY" ? "SELL" : "BUY";
+
+                        // Neu: SL handhaben
+                        if (sl !== null) {
+                            let stopPrice;
+                            if (sl.endsWith('%')) {
+                                const slPercent = parseFloat(sl.slice(0, -1));
+                                if (isNaN(slPercent)) throw new Error("Invalid SL percent");
+                                const sl_distance = slPercent / 100;  // Neu: Reiner Preis-Prozentsatz (analog zu TP)
+                                if (side === "BUY") { // Long: SL unten
+                                    stopPrice = price * (1 - sl_distance);
+                                } else { // Short: SL oben
+                                    stopPrice = price * (1 + sl_distance);
+                                }
+                            } else {
+                                stopPrice = parseFloat(sl);
+                                if (isNaN(stopPrice)) throw new Error("Invalid SL value");
+                                // Validierung: Für Long muss SL < Entry, für Short > Entry
+                                if ((side === "BUY" && stopPrice >= price) || (side === "SELL" && stopPrice <= price)) {
+                                    throw new Error("Invalid SL price direction");
+                                }
+                            }
+                            stopPrice = Number(stopPrice.toFixed(constraints.pricePrecision));
+                            const slParams = {
+                                symbol,
+                                side: closeSide,
+                                type: "STOP_MARKET",
+                                stopPrice: stopPrice.toString(),
+                                closePosition: "true",
+                                positionSide
+                            };
+                            await ApiModule.postOrder(slParams);
+                        }
+
+                        if (rr_ratio !== null) {
+                            if (tp) throw new Error("Cannot specify both TP and RR");
+                            const net_profit = usedMargin * rr_ratio;
+                            const fees = adjustedPositionSize * TAKER_FEE * 2;
+                            const gross_profit = net_profit + fees;
+                            const tp_distance = gross_profit / adjustedPositionSize;
+                            let takePrice;
+                            if (side === "BUY") { // Long
+                                takePrice = price * (1 + tp_distance);
+                            } else {
+                                takePrice = price * (1 - tp_distance);
+                            }
+                            takePrice = Number(takePrice.toFixed(constraints.pricePrecision));
+                            const tpParams = {
+                                symbol,
+                                side: closeSide,
+                                type: "TAKE_PROFIT_MARKET",
+                                stopPrice: takePrice.toString(),
+                                closePosition: "true",
+                                positionSide
+                            };
+                            await ApiModule.postOrder(tpParams);
+                        } else if (tp) {
+                            let takePrice;
+                            if (tp.endsWith('%')) {
+                                const tpPercent = parseFloat(tp.slice(0, -1));
+                                if (isNaN(tpPercent)) throw new Error("Invalid TP percent");
+                                if (side === "BUY") {
+                                    takePrice = price * (1 + tpPercent / 100);
+                                } else {
+                                    takePrice = price * (1 - tpPercent / 100);
+                                }
+                            } else {
+                                takePrice = parseFloat(tp);
+                                if (isNaN(takePrice)) throw new Error("Invalid TP value");
+                            }
+                            takePrice = Number(takePrice.toFixed(constraints.pricePrecision));
+                            const tpParams = {
+                                symbol,
+                                side: closeSide,
+                                type: "TAKE_PROFIT_MARKET",
+                                stopPrice: takePrice.toString(),
+                                closePosition: "true",
+                                positionSide
+                            };
+                            await ApiModule.postOrder(tpParams);
+                        }
+
+                        await _updateCapital();
+                        EventEmitter.emit("order-placed", symbol);
+                        ErrorHandlerModule.handleSuccess(
+                            `${side === "BUY" ? "Long" : "Short"} position successfully opened (Quantity: ${quantity}, Value: ${adjustedPositionSize.toFixed(2)} USDT, Margin: ${usedMargin.toFixed(2)} USDT, Leverage: ${adjustedLeverage}x)${sl ? ` SL: ${sl}` : ''}${tp ? ` TP: ${tp}` : ''}${rr_ratio ? ` RR: ${rr_ratio}` : ''}`
+                        );
+
+                        // Neue Funktionalität: Stoppe den Loop, wenn ein Trade erfolgreich eröffnet wurde
+                        if (activeLoopInterval) {
+                            clearInterval(activeLoopInterval);
+                            activeLoopInterval = null;
+                            const executeButton = document.getElementById("executeScript");
+                            if (executeButton) {
+                                executeButton.textContent = "Execute Script";
+                            }
+                            document.getElementById("loopCheckbox").checked = false; // Optional: Deaktiviere die Checkbox
+                            ErrorHandlerModule.handleSuccess("Trade executed successfully. Loop stopped.");
+                        }
+                    } catch (error) {
+                        ErrorHandlerModule.handleError(`Order failed: ${error.message}`);
+                    }
+                }
+
+                return Object.freeze({
+                    init: async () => {
+                        try {
+                            const response = await ApiModule.fetchLeverageBrackets();
+                            leverageBrackets = Object.fromEntries(
+                                response.map((item) => [
+                                    item.symbol,
+                                    item.brackets && item.brackets.length > 0 ? item.brackets[0].initialLeverage : CONFIG.MAX_LEVERAGE,
+                                ])
+                            );
+                            _updateLeverageForSymbol("BTCUSDT");
+                            await _updateCapital();
+                        } catch (error) {
+                            leverageBrackets = {};
+                            maxLeverage = CONFIG.MAX_LEVERAGE;
+                            EventEmitter.emit("leverage-updated", maxLeverage);
+                            ErrorHandlerModule.handleError(`Failed to fetch leverage brackets: ${error.message}`);
+                        }
+                    },
+                    setSymbolPrecisions: (precisions) => { symbolPrecisions = precisions; },
+                    setSymbolConstraints: (constraints) => { symbolConstraints = constraints; },
+                    updateLeverageForSymbol: _updateLeverageForSymbol,
+                    getMaxLeverage: () => maxLeverage,
+                    getAvailableCapital: () => availableCapital,
+                    calculateQuantity: _calculateQuantity,
+                    calculateLiquidationPrice,
+                    placeOrder: placeOrderWithLock, // Use locked wrapper
+                    closePosition: async (symbol, side) => {
+                        try {
+                            const positions = await ApiModule.fetchPositions();
+                            const position = positions.find((p) => p.symbol === symbol && p.positionSide === side);
+                            if (!position || parseFloat(position.positionAmt) === 0) {
+                                throw new Error("No position to close");
+                            }
+                            const quantity = Math.abs(parseFloat(position.positionAmt)).toFixed(symbolPrecisions[symbol] || 4);
+                            const closeParams = {
+                                symbol,
+                                side: side === "LONG" ? "SELL" : "BUY",
+                                type: "MARKET",
+                                quantity: quantity,
+                                positionSide: side
+                            };
+                            await ApiModule.postOrder(closeParams);
+                            await ApiModule.cancelAllOpenOrders(symbol);
+                            await _updateCapital();
+                            EventEmitter.emit("position-closed", symbol);
+                            ErrorHandlerModule.handleSuccess(`${side} position successfully closed`);
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Failed to close position: ${error.message}`);
+                        }
+                    },
+                });
+            })();
+
+            // ------------------ SECTION: UiModule ------------------
+            // Dependencies: EventEmitter, ApiModule, TradeModule, ChartDataModule, CONFIG
+            /**
+             * Manages DOM manipulations and UI updates.
+             */
+            const UiModule = (function () {
+                let loadingTimeout = null;
+                let lastUpdateTime = 0;
+
+                function _showLoading(show) {
+                    if (loadingTimeout) clearTimeout(loadingTimeout);
+                    if (show) {
+                        loadingTimeout = setTimeout(() => {
+                            document.getElementById("loading").style.display = "block";
+                        }, 500);
+                    } else {
+                        document.getElementById("loading").style.display = "none";
+                    }
+                }
+
+                function _createDropdowns(symbols) {
+                    const controlBar = document.getElementById("controlBar");
+                    const ohlcInfo = document.getElementById("ohlcInfo");
+                    const dailyChangeInfo = document.getElementById("dailyChangeInfo");
+                    controlBar.innerHTML = "";
+                    controlBar.appendChild(dailyChangeInfo);
+                    controlBar.appendChild(ohlcInfo);
+
+                    const symbolSelect = document.createElement("select");
+                    symbolSelect.id = "symbolSelect";
+                    symbolSelect.addEventListener("change", () => EventEmitter.emit("symbol-changed", symbolSelect.value));
+                    symbols.forEach((symObj) => {
+                        const option = document.createElement("option");
+                        option.value = symObj.symbol;
+                        option.text = symObj.symbol;
+                        if (symObj.symbol === "BTCUSDT") option.selected = true;
+                        symbolSelect.appendChild(option);
+                    });
+
+                    const intervalSelect = document.createElement("select");
+                    intervalSelect.id = "intervalSelect";
+                    intervalSelect.addEventListener("change", () => EventEmitter.emit("interval-changed", intervalSelect.value));
+                    const intervals = [
+                        { value: "1m", text: "1 Minute" },
+                        { value: "3m", text: "3 Minutes" },
+                        { value: "5m", text: "5 Minutes" },
+                        { value: "15m", text: "15 Minutes" },
+                        { value: "30m", text: "30 Minutes" },
+                        { value: "1h", text: "1 Hour", selected: true },
+                        { value: "2h", text: "2 Hours" },
+                        { value: "4h", text: "4 Hours" },
+                        { value: "6h", text: "6 Hours" },
+                        { value: "8h", text: "8 Hours" },
+                        { value: "12h", text: "12 Hours" },
+                        { value: "1d", text: "1 Day" },
+                        { value: "3d", text: "3 Days" },
+                        { value: "1w", text: "1 Week" },
+                        { value: "1M", text: "1 Month" },
+                    ];
+                    intervals.forEach((interval) => {
+                        const option = document.createElement("option");
+                        option.value = interval.value;
+                        option.text = interval.text;
+                        if (interval.selected) option.selected = true;
+                        intervalSelect.appendChild(option);
+                    });
+
+                    controlBar.insertBefore(symbolSelect, dailyChangeInfo);
+                    controlBar.insertBefore(intervalSelect, dailyChangeInfo);
+                }
+
+                function _initIndicatorControls() {
+                    const indicatorDiv = document.getElementById("indicatorControls");
+                    indicatorDiv.innerHTML += "Indicators: ";
+
+                    const rsiLabel = document.createElement("label");
+                    rsiLabel.textContent = "RSI";
+                    rsiLabel.htmlFor = "rsiCheckbox";
+                    const rsiCheckbox = document.createElement("input");
+                    rsiCheckbox.type = "checkbox";
+                    rsiCheckbox.id = "rsiCheckbox";
+                    rsiCheckbox.checked = true;
+                    rsiLabel.appendChild(rsiCheckbox);
+                    indicatorDiv.appendChild(rsiLabel);
+
+                    const obvLabel = document.createElement("label");
+                    obvLabel.textContent = "OBV-MACD";
+                    obvLabel.htmlFor = "obvCheckbox";
+                    const obvCheckbox = document.createElement("input");
+                    obvCheckbox.type = "checkbox";
+                    obvCheckbox.id = "obvCheckbox";
+                    obvCheckbox.checked = false;
+                    obvLabel.appendChild(obvCheckbox);
+                    indicatorDiv.appendChild(obvLabel);
+
+                    const macdLabel = document.createElement("label");
+                    macdLabel.textContent = "MACD";
+                    macdLabel.htmlFor = "macdCheckbox";
+                    const macdCheckbox = document.createElement("input");
+                    macdCheckbox.type = "checkbox";
+                    macdCheckbox.id = "macdCheckbox";
+                    macdCheckbox.checked = false;
+                    macdLabel.appendChild(macdCheckbox);
+                    indicatorDiv.appendChild(macdLabel);
+
+                    rsiCheckbox.addEventListener("change", () => {
+                        if (rsiCheckbox.checked) {
+                            obvCheckbox.checked = false;
+                            macdCheckbox.checked = false;
+                        }
+                        selectedIndicator = rsiCheckbox.checked ? 'rsi' : (obvCheckbox.checked ? 'obv-macd' : (macdCheckbox.checked ? 'macd' : null));
+                        EventEmitter.emit("indicator-changed");
+                    });
+
+                    obvCheckbox.addEventListener("change", () => {
+                        if (obvCheckbox.checked) {
+                            rsiCheckbox.checked = false;
+                            macdCheckbox.checked = false;
+                        }
+                        selectedIndicator = obvCheckbox.checked ? 'obv-macd' : (rsiCheckbox.checked ? 'rsi' : (macdCheckbox.checked ? 'macd' : null));
+                        EventEmitter.emit("indicator-changed");
+                    });
+
+                    macdCheckbox.addEventListener("change", () => {
+                        if (macdCheckbox.checked) {
+                            rsiCheckbox.checked = false;
+                            obvCheckbox.checked = false;
+                        }
+                        selectedIndicator = macdCheckbox.checked ? 'macd' : (rsiCheckbox.checked ? 'rsi' : (obvCheckbox.checked ? 'obv-macd' : null));
+                        EventEmitter.emit("indicator-changed");
+                    });
+                }
+
+                async function _renderOpenPositions(positions) {
+                    const tbody = document.getElementById("openTradesBody");
+                    const fragment = document.createDocumentFragment();
+                    if (!positions || positions.length === 0 || positions.every((p) => parseFloat(p.positionAmt) === 0)) {
+                        const row = document.createElement("tr");
+                        row.innerHTML = "<td colspan='13'>No open positions</td>";
+                        fragment.appendChild(row);
+                        tbody.innerHTML = "";
+                        tbody.appendChild(fragment);
+                        return;
+                    }
+                    const openOrders = await ApiModule.fetchOpenOrders();
+                    for (const position of positions) {
+                        if (parseFloat(position.positionAmt) !== 0) {
+                            const side = position.positionSide || (parseFloat(position.positionAmt) > 0 ? "LONG" : "SHORT");
+                            const time = new Date().toLocaleString("en-DE"); // TODO: Fetch position open time from API
+                            const notional = Math.abs(parseFloat(position.positionAmt)) * parseFloat(position.entryPrice);
+                            let slPrice = "N/A";
+                            let tpPrice = "N/A";
+                            const constraints = ApiModule.getSymbolConstraints(position.symbol);
+                            const pricePrecision = constraints.pricePrecision || 2;
+                            const slOrder = openOrders.find(o => o.symbol === position.symbol && o.type === "STOP_MARKET" && o.positionSide === side && o.closePosition);
+                            const tpOrder = openOrders.find(o => o.symbol === position.symbol && o.type === "TAKE_PROFIT_MARKET" && o.positionSide === side && o.closePosition);
+                            if (slOrder) slPrice = parseFloat(slOrder.stopPrice).toFixed(pricePrecision);
+                            if (tpOrder) tpPrice = parseFloat(tpOrder.stopPrice).toFixed(pricePrecision);
+                            const row = document.createElement("tr");
+                            row.innerHTML = `
+                                <td>${position.symbol}</td>
+                                <td>${side}</td>
+                                <td>${parseFloat(position.entryPrice).toFixed(pricePrecision)}</td>
+                                <td>${notional.toFixed(2)}</td>
+                                <td>${time}</td>
+                                <td>${parseFloat(position.unRealizedProfit).toFixed(2)}</td>
+                                <td>${parseFloat(position.liquidationPrice).toFixed(pricePrecision)}</td>
+                                <td>${slPrice}</td>
+                                <td>${tpPrice}</td>
+                                <td>${parseInt(position.leverage)}x</td>
+                                <td>${position.marginType}</td>
+                                <td>${parseFloat(position.isolatedMargin).toFixed(2)}</td>
+                                <td><button class="close-position" data-symbol="${position.symbol}" data-side="${side}">Close</button></td>
+                            `;
+                            fragment.appendChild(row);
+                        }
+                    }
+                    tbody.innerHTML = "";
+                    tbody.appendChild(fragment);
+                    document.querySelectorAll(".close-position").forEach((button) => {
+                        button.addEventListener("click", () => TradeModule.closePosition(button.dataset.symbol, button.dataset.side));
+                    });
+                }
+
+                function _initTabs() {
+                    const tabButtons = document.querySelectorAll(".tab-button");
+                    const tabPanes = document.querySelectorAll(".tab-pane");
+
+                    tabButtons.forEach((button) => {
+                        button.addEventListener("click", () => {
+                            tabButtons.forEach((btn) => btn.classList.remove("active"));
+                            tabPanes.forEach((pane) => pane.classList.remove("active"));
+
+                            button.classList.add("active");
+                            const tabId = button.getAttribute("data-tab");
+                            document.getElementById(tabId).classList.add("active");
+                        });
+                    });
+                }
+
+                function _initTradeControls() {
+                    const riskInput = document.getElementById("riskInput");
+                    const leverageInput = document.getElementById("leverageInput");
+                    const openLongButton = document.getElementById("openLongButton");
+                    const openShortButton = document.getElementById("openShortButton");
+
+                    let updateTimeout = null;
+                    const throttledUpdate = () => {
+                        clearTimeout(updateTimeout);
+                        updateTimeout = setTimeout(() => {
+                            EventEmitter.emit("trade-inputs-changed");
+                        }, CONFIG.UPDATE_THROTTLE_MS);
+                    };
+
+                    riskInput.addEventListener("input", throttledUpdate);
+                    leverageInput.addEventListener("input", throttledUpdate);
+                    openLongButton.addEventListener("click", () => EventEmitter.emit("open-long"));
+                    openShortButton.addEventListener("click", () => EventEmitter.emit("open-short"));
+
+                    // Add blur listeners for clamping
+                    riskInput.addEventListener("blur", () => {
+                        let value = parseFloat(riskInput.value);
+                        if (isNaN(value) || value < 0) value = 0;
+                        if (value > 100) value = 100;
+                        riskInput.value = value;
+                        EventEmitter.emit("trade-inputs-changed");
+                    });
+
+                    leverageInput.addEventListener("blur", () => {
+                        let value = parseFloat(leverageInput.value);
+                        if (isNaN(value) || value < 1) value = 1;
+                        if (value > TradeModule.getMaxLeverage()) value = TradeModule.getMaxLeverage();
+                        leverageInput.value = value;
+                        EventEmitter.emit("trade-inputs-changed");
+                    });
+                }
+
+                function _initScriptControls() {
+                    const executeButton = document.getElementById("executeScript");
+                    const loopCheckbox = document.getElementById("loopCheckbox");
+
+                    executeButton.addEventListener("click", () => {
+                        const script = document.getElementById("scriptInput").value.trim();
+                        if (!script) {
+                            ErrorHandlerModule.handleError("No script entered");
+                            return;
+                        }
+
+                        if (loopCheckbox.checked) {
+                            if (activeLoopInterval) {
+                                // Stop the loop
+                                clearInterval(activeLoopInterval);
+                                activeLoopInterval = null;
+                                executeButton.textContent = "Execute Script";
+                            } else {
+                                // Start the loop
+                                activeLoopInterval = setInterval(() => {
+                                    try {
+                                        executeCustomScript(script);
+                                    } catch (error) {
+                                        ErrorHandlerModule.handleError(`Script execution failed: ${error.message}`);
+                                    }
+                                }, 1000);
+                                executeButton.textContent = "Stop Loop";
+                            }
+                        } else {
+                            // Execute once
+                            try {
+                                executeCustomScript(script);
+                            } catch (error) {
+                                ErrorHandlerModule.handleError(`Script execution failed: ${error.message}`);
+                            }
+                        }
+                    });
+                }
+
+                function _showMessage(message, color, duration = 5000) {
+                    const tradeMessages = document.getElementById("tradeMessages");
+                    const settingsMessages = document.getElementById("settingsMessages");
+                    const scriptMessages = document.getElementById("scriptMessages");
+
+                    const createMessageDiv = () => {
+                        const messageDiv = document.createElement("div");
+                        messageDiv.style.color = color;
+                        messageDiv.textContent = message;
+                        setTimeout(() => messageDiv.remove(), duration);
+                        return messageDiv;
+                    };
+
+                    if (tradeMessages) {
+                        const tradeMessageDiv = createMessageDiv();
+                        tradeMessages.insertBefore(tradeMessageDiv, tradeMessages.firstChild);
+                    }
+
+                    if (settingsMessages) {
+                        const settingsMessageDiv = createMessageDiv();
+                        settingsMessages.insertBefore(settingsMessageDiv, settingsMessages.firstChild);
+                    }
+
+                    if (scriptMessages) {
+                        const scriptMessageDiv = createMessageDiv();
+                        scriptMessages.insertBefore(scriptMessageDiv, scriptMessages.firstChild);
+                    }
+                }
+
+                function _updateFetchIndicator(type, status) {
+                    const indicatorId = type === 'latest' ? "liveCandleIndicator" : "markPriceIndicator";
+                    const indicator = document.getElementById(indicatorId);
+                    if (indicator) {
+                        indicator.style.backgroundColor = status === 'fetch' ? 'green' : 'red';
+                        setTimeout(() => {
+                            indicator.style.backgroundColor = 'grey';
+                        }, 500); // Blink for 0.5s then back to grey
+                    }
+                }
+
+                return Object.freeze({
+                    showMessage: _showMessage,
+                    updateTradeInputs(riskPercent, leverage, capital, maxLeverage) {
+                        const now = performance.now();
+                        if (now - lastUpdateTime < CONFIG.UPDATE_THROTTLE_MS) return;
+                        lastUpdateTime = now;
+
+                        const riskInput = document.getElementById("riskInput");
+                        const riskAmountDisplay = document.getElementById("riskAmountDisplay");
+                        const leverageInput = document.getElementById("leverageInput");
+                        const positionSizeInput = document.getElementById("positionSizeInput");
+                        const riskValue = document.getElementById("riskValue");
+                        const leverageValue = document.getElementById("leverageValue");
+                        const liqPriceDisplay = document.getElementById("liqPriceDisplay");
+                        const openLongButton = document.getElementById("openLongButton");
+                        const openShortButton = document.getElementById("openShortButton");
+
+                        // Clamp for calculation only, do not set input.value here
+                        let adjustedRiskPercent = parseFloat(riskPercent);
+                        if (isNaN(adjustedRiskPercent) || adjustedRiskPercent < 0) adjustedRiskPercent = 0;
+                        if (adjustedRiskPercent > 100) adjustedRiskPercent = 100;
+
+                        let adjustedLeverage = parseFloat(leverage);
+                        if (isNaN(adjustedLeverage) || adjustedLeverage < 1) adjustedLeverage = 1;
+                        if (adjustedLeverage > maxLeverage) adjustedLeverage = maxLeverage;
+
+                        const riskAmount = (capital * adjustedRiskPercent) / 100;
+                        const positionSize = riskAmount * adjustedLeverage;
+
+                        riskValue.textContent = `${adjustedRiskPercent.toFixed(1)}%`;
+                        riskAmountDisplay.textContent = riskAmount.toFixed(2);
+
+                        const symbol = ChartDataModule.getCurrentSymbol();
+
+                        ApiModule.fetchMarkPrice(symbol)
+                            .then((price) => {
+                                if (price && !isNaN(price)) {
+                                    const { adjustedPositionSize, usedMargin, leverage: simulatedEffectiveLeverage, error } = TradeModule.calculateQuantity(
+                                        symbol, positionSize, price, riskAmount, adjustedLeverage, maxLeverage
+                                    );
+                                    if (error) {
+                                        positionSizeInput.textContent = `0.00 (Trade not possible: ${error})`;
+                                        liqPriceDisplay.textContent = `- / -`;
+                                        openLongButton.disabled = true;
+                                        openShortButton.disabled = true;
+                                        liqLong = null;
+                                        liqShort = null;
+                                    } else {
+                                        positionSizeInput.textContent = `${adjustedPositionSize.toFixed(2)} (Margin: ${usedMargin.toFixed(2)})`;
+                                        const constraints = ApiModule.getSymbolConstraints(symbol);
+                                        liqLong = TradeModule.calculateLiquidationPrice("LONG", price, simulatedEffectiveLeverage, usedMargin);
+                                        liqShort = TradeModule.calculateLiquidationPrice("SHORT", price, simulatedEffectiveLeverage, usedMargin);
+                                        const longPercent = ((liqLong - price) / price * 100).toFixed(2);
+                                        const shortPercent = ((liqShort - price) / price * 100).toFixed(2);
+                                        liqPriceDisplay.textContent = `${liqLong.toFixed(constraints.pricePrecision)} (${longPercent}%) / ${liqShort.toFixed(constraints.pricePrecision)} (${shortPercent}%)`;
+                                        openLongButton.disabled = false;
+                                        openShortButton.disabled = false;
+                                        leverageValue.textContent = `${adjustedLeverage.toFixed(0)}x/eff.${simulatedEffectiveLeverage}x (Max ${maxLeverage}x)`;
+                                    }
+                                    EventEmitter.emit("chart-data-updated"); // Trigger redraw to update lines
+                                } else {
+                                    positionSizeInput.textContent = `0.00 (Price not available)`;
+                                    liqPriceDisplay.textContent = `- / -`;
+                                    openLongButton.disabled = true;
+                                    openShortButton.disabled = true;
+                                    liqLong = null;
+                                    liqShort = null;
+                                }
+                            })
+                            .catch(() => {
+                                positionSizeInput.textContent = `0.00 (Price not available)`;
+                                liqPriceDisplay.textContent = `- / -`;
+                                openLongButton.disabled = true;
+                                openShortButton.disabled = true;
+                                liqLong = null;
+                                liqShort = null;
+                            });
+                    },
+                    updateBalance(capital) {
+                        document.getElementById("balanceInfo").textContent = isFinite(capital)
+                            ? `Balance: ${capital.toFixed(2)} USDT`
+                            : `Balance: ${capital.toFixed(2)} USDT (Test)`;
+                    },
+                    init(symbols) {
+                        _showLoading(true);
+                        _createDropdowns(symbols);
+                        _initTabs();
+                        _initTradeControls();
+                        _initScriptControls();
+                        _initIndicatorControls();
+                        _showLoading(false);
+                        EventEmitter.on("daily-change-updated", (percText, color) => {
+                            const dailyChangeInfo = document.getElementById("dailyChangeInfo");
+                            dailyChangeInfo.textContent = `Change: ${percText}`;
+                            dailyChangeInfo.style.color = color;
+                        });
+                        EventEmitter.on("fetch-status", (data) => _updateFetchIndicator(data.type, data.status));
+                    },
+                    renderOpenPositions: _renderOpenPositions,
+                    showLoading: _showLoading,
+                });
+            })();
+
+            // ------------------ SECTION: ChartDataModule ------------------
+            // Dependencies: ApiModule, EventEmitter, CONFIG, UtilsModule
+            /**
+             * Manages chart data, live candle, and SMA calculation.
+             */
+            const ChartDataModule = (function () {
+                let chartData = [];
+                let liveCandle = null;
+                let smaValues = [];
+                let obvMacd = [];
+                let obvSignal = [];
+                let rsiValues = [];
+                let macdValues = [];
+                let macdSignal = [];
+                let currentSymbol = "BTCUSDT";
+                let currentInterval = "1h";
+                let lastCandleTime = null;
+                let lastValidPrice = null;
+                let updateInterval = null;
+                let dailyOpen = null;
+                let isFetching = false; // Fix: Lock for fetching
+                let updateTimeout = null;
+
+                function _calculateSMA(data, period) {
+                    const sma = [];
+                    for (let i = 0; i < data.length; i++) {
+                        const startIndex = Math.max(0, i - period + 1);
+                        const slice = data.slice(startIndex, i + 1);
+                        const avg = slice.reduce((sum, candle) => sum + candle.close, 0) / slice.length;
+                        sma.push(avg);
+                    }
+                    return sma;
+                }
+
+                function _calculateEMA(src, length) {
+                    const k = 2 / (length + 1);
+                    return src.reduce((ema, val, i) => {
+                        ema.push(i === 0 ? val : val * k + ema[i - 1] * (1 - k));
+                        return ema;
+                    }, []);
+                }
+
+                function _calculateDEMA(src, len) {
+                    const ma1 = _calculateEMA(src, len);
+                    const ma2 = _calculateEMA(ma1, len);
+                    return ma1.map((val, i) => 2 * val - ma2[i]);
+                }
+
+                function _calculateStdDev(data) {
+                    const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+                    return Math.sqrt(data.reduce((sum, val) => sum + (val - mean) ** 2, 0) / data.length);
+                }
+
+                function _calculateOBV(data) {
+                    let obv = 0;
+                    return data.map((candle, i) => {
+                        if (i === 0) return 0;
+                        const sign = candle.close > data[i - 1].close ? 1 : candle.close < data[i - 1].close ? -1 : 0;
+                        obv += sign * candle.volume;
+                        return obv;
+                    });
+                }
+
+                function _calculateOBVMACD(data) {
+                    const obv = _calculateOBV(data);
+                    const smooth = _calculateEMA(obv, CONFIG.OBV_MACD.OBV_SMOOTH_PERIOD);
+                    const priceSpread = _calculateStdDev(data.slice(-28).map((d) => d.high - d.low));
+                    const vSpread = _calculateStdDev(obv.slice(-28).map((v, i) => v - smooth[i]));
+                    const shadows = obv.map((v, i) => ((v - smooth[i]) / (vSpread || 1e-10)) * priceSpread);
+                    const out = data.map((d, i) => shadows[i] > 0 ? d.high + shadows[i] : d.low + shadows[i]);
+                    const obvema = _calculateEMA(out, 1);
+                    const ma = _calculateDEMA(obvema, CONFIG.OBV_MACD.DEMA_PERIOD);
+                    const slowMa = _calculateEMA(data.map((d) => d.close), CONFIG.OBV_MACD.SLOW_EMA_PERIOD);
+                    const macd = ma.map((m, i) => m - slowMa[i]);
+                    const signal = _calculateEMA(macd, CONFIG.OBV_MACD.SIGNAL_PERIOD);
+                    return { macd, signal };
+                }
+
+                function _calculateRSI(data, period = CONFIG.RSI_PERIOD) {
+                    if (data.length < period + 1) return new Array(data.length).fill(NaN);
+                    const changes = data.map((c, i) => i > 0 ? c.close - data[i-1].close : 0);
+                    let gains = changes.slice(1, period + 1).filter(d => d > 0).reduce((a, b) => a + b, 0) / period;
+                    let losses = Math.abs(changes.slice(1, period + 1).filter(d => d < 0).reduce((a, b) => a + b, 0)) / period;
+                    let rsi = [];
+                    let rs = losses === 0 ? Infinity : gains / losses;
+                    rsi.push(rs === Infinity ? 100 : 100 - (100 / (1 + rs)));
+                    for (let i = period + 1; i < data.length; i++) {
+                        const change = changes[i];
+                        const avgGain = (gains * (period - 1) + (change > 0 ? change : 0)) / period;
+                        const avgLoss = (losses * (period - 1) + (change < 0 ? -change : 0)) / period;
+                        gains = avgGain;
+                        losses = avgLoss;
+                        rs = avgLoss === 0 ? Infinity : avgGain / avgLoss;
+                        rsi.push(rs === Infinity ? 100 : 100 - (100 / (1 + rs)));
+                    }
+                    return new Array(period).fill(NaN).concat(rsi);
+                }
+
+                function _calculateMACD(data) {
+                    const closes = data.map(d => d.close);
+                    const fastEma = _calculateEMA(closes, CONFIG.MACD.FAST_PERIOD);
+                    const slowEma = _calculateEMA(closes, CONFIG.MACD.SLOW_PERIOD);
+                    const macd = fastEma.map((f, i) => f - slowEma[i]);
+                    const signal = _calculateEMA(macd, CONFIG.MACD.SIGNAL_PERIOD);
+                    return { macd, signal };
+                }
+
+                function _calculateAverageVolume(data, period = CONFIG.AVG_VOLUME_PERIOD) {
+                    if (data.length < period) return NaN;
+                    const volumes = data.slice(-period).map(c => c.volume);
+                    return volumes.reduce((sum, v) => sum + v, 0) / period;
+                }
+
+                async function _getLatestPrice() {
+                    return await ApiModule.fetchLatestPrice(currentSymbol);
+                }
+
+                async function _updateChartInner() {
+                    const latestPrice = await _getLatestPrice();
+                    if (!latestPrice) {
+                        if (lastValidPrice && liveCandle) {
+                            liveCandle.close = lastValidPrice;
+                            if (lastValidPrice > liveCandle.high) liveCandle.high = lastValidPrice;
+                            if (lastValidPrice < liveCandle.low) liveCandle.low = lastValidPrice;
+                            EventEmitter.emit("chart-data-updated", chartData, liveCandle);
+                        }
+                        return;
+                    }
+
+                    lastValidPrice = latestPrice;
+
+                    if (chartData.length === 0) return;
+
+                    const lastCandle = chartData[chartData.length - 1];
+                    if (!liveCandle) {
+                        liveCandle = { ...lastCandle, closed: false };
+                    }
+
+                    liveCandle.close = latestPrice;
+                    if (latestPrice > liveCandle.high) liveCandle.high = latestPrice;
+                    if (latestPrice < liveCandle.low) liveCandle.low = latestPrice;
+
+                    if (lastCandleTime && UtilsModule.isCandleExpired(lastCandleTime, currentInterval)) {
+                        isFetching = true; // Lock
+                        const previousViewport = ChartModule.getViewport();
+                        await ChartDataModule.fetchHistoricalData(currentSymbol, currentInterval);
+                        ChartModule.updateViewport({ preserveZoom: true, previousViewport });
+                        isFetching = false; // Unlock
+                    }
+
+                    if (liveCandle) {
+                        const tempData = [...chartData, liveCandle];
+                        smaValues = _calculateSMA(tempData, CONFIG.SMA_PERIOD);
+                        const { macd: obvMacdVal, signal: obvSignalVal } = _calculateOBVMACD(tempData);
+                        obvMacd = obvMacdVal;
+                        obvSignal = obvSignalVal;
+                        rsiValues = _calculateRSI(tempData);
+                        const { macd: macdVal, signal: macdSignalVal } = _calculateMACD(tempData);
+                        macdValues = macdVal;
+                        macdSignal = macdSignalVal;
+                    }
+
+                    if (liveCandle && dailyOpen && dailyOpen > 0) {
+                        const perc = (liveCandle.close - dailyOpen) / dailyOpen * 100;
+                        const sign = perc > 0 ? '+' : '';
+                        const percText = `${sign}${perc.toFixed(2)}%`;
+                        const color = perc > 0 ? '#2dbd85' : (perc < 0 ? '#f6465d' : '#ffffff');
+                        EventEmitter.emit("daily-change-updated", percText, color);
+                    }
+
+                    EventEmitter.emit("chart-data-updated", chartData, liveCandle);
+                }
+
+                function _updateChart() {
+                    if (isFetching) return;
+                    if (updateTimeout) clearTimeout(updateTimeout);
+                    updateTimeout = setTimeout(async () => {
+                        isFetching = true;
+                        try {
+                            await _updateChartInner();
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Chart update failed: ${error.message}`);
+                        } finally {
+                            isFetching = false;
+                        }
+                    }, 0);
+                }
+
+                return Object.freeze({
+                    init: async (symbol, interval) => {
+                        currentSymbol = symbol;
+                        currentInterval = interval;
+                        if (updateInterval) clearInterval(updateInterval); // Clear interval FIRST to prevent races during fetch
+                        chartData = []; // Clear old data to prevent bogus draws if any redraw triggers
+                        liveCandle = null;
+                        smaValues = [];
+                        obvMacd = [];
+                        obvSignal = [];
+                        rsiValues = [];
+                        macdValues = [];
+                        macdSignal = [];
+                        lastCandleTime = null;
+                        lastValidPrice = null;
+                        dailyOpen = null;
+                        await ChartDataModule.fetchHistoricalData(symbol, interval);
+                        await _updateChart(); // Fix: Immediate update after init to start live candle immediately
+                        updateInterval = setInterval(_updateChart, 500); // Restart interval AFTER fetch completes
+                    },
+                    fetchHistoricalData: async (symbol, interval) => {
+                        UiModule.showLoading(true);
+                        try {
+                            const dailyKlines = await ApiModule.fetchKlines(symbol, "1d", 1);
+                            dailyOpen = parseFloat(dailyKlines[0][1]);
+
+                            const response = await ApiModule.fetchKlines(symbol, interval, CONFIG.DATA_LIMIT + CONFIG.SMA_PERIOD - 1);
+                            if (!Array.isArray(response) || response.length === 0) {
+                                throw new Error("No data received");
+                            }
+                            const historicalData = response.map((item) => ({
+                                time: new Date(item[0]),
+                                open: parseFloat(item[1]),
+                                high: parseFloat(item[2]),
+                                low: parseFloat(item[3]),
+                                close: parseFloat(item[4]),
+                                volume: parseFloat(item[5]),
+                                closed: true,
+                            }));
+                            const validData = historicalData.filter(
+                                (candle) => !isNaN(candle.open) && !isNaN(candle.high) && !isNaN(candle.low) && !isNaN(candle.close) && !isNaN(candle.volume) && candle.high >= candle.low
+                            );
+                            if (validData.length > 0) {
+                                lastCandleTime = validData[validData.length - 1].time.getTime();
+                                chartData = validData;
+                                smaValues = _calculateSMA(chartData, CONFIG.SMA_PERIOD);
+                                const { macd: obvMacdVal, signal: obvSignalVal } = _calculateOBVMACD(chartData);
+                                obvMacd = obvMacdVal;
+                                obvSignal = obvSignalVal;
+                                rsiValues = _calculateRSI(chartData);
+                                const { macd: macdVal, signal: macdSignalVal } = _calculateMACD(chartData);
+                                macdValues = macdVal;
+                                macdSignal = macdSignalVal;
+                                // Removed liveCandle = null; to keep old until new is ready
+                                lastValidPrice = null;
+                                const latestPrice = await _getLatestPrice(); // Use cached if possible
+                                if (latestPrice) {
+                                    liveCandle = { ...chartData[chartData.length - 1], closed: false, close: latestPrice };
+                                    liveCandle.high = Math.max(liveCandle.high, latestPrice);
+                                    liveCandle.low = Math.min(liveCandle.low, latestPrice);
+                                    lastValidPrice = latestPrice;
+                                    const tempData = [...chartData, liveCandle];
+                                    smaValues = _calculateSMA(tempData, CONFIG.SMA_PERIOD);
+                                    const { macd: obvMacdValTemp, signal: obvSignalValTemp } = _calculateOBVMACD(tempData);
+                                    obvMacd = obvMacdValTemp;
+                                    obvSignal = obvSignalValTemp;
+                                    rsiValues = _calculateRSI(tempData);
+                                    const { macd: macdValTemp, signal: macdSignalValTemp } = _calculateMACD(tempData);
+                                    macdValues = macdValTemp;
+                                    macdSignal = macdSignalValTemp;
+                                }
+                                EventEmitter.emit("chart-data-updated", chartData, liveCandle);
+                                // Removed reset viewport call to prevent reset on data refresh
+                                ChartModule.requestDraw();
+                                return chartData;
+                            }
+                            chartData = [];
+                            smaValues = [];
+                            obvMacd = [];
+                            obvSignal = [];
+                            rsiValues = [];
+                            macdValues = [];
+                            macdSignal = [];
+                            throw new Error("No valid data");
+                        } catch (error) {
+                            chartData = [];
+                            smaValues = [];
+                            obvMacd = [];
+                            obvSignal = [];
+                            rsiValues = [];
+                            macdValues = [];
+                            macdSignal = [];
+                            dailyOpen = null;
+                            ErrorHandlerModule.handleError(`Failed to load chart data: ${error.message}`);
+                            return chartData;
+                        } finally {
+                            UiModule.showLoading(false);
+                        }
+                    },
+                    getChartData: () => chartData,
+                    getLiveCandle: () => liveCandle,
+                    getSmaValues: (startIndex, count) => smaValues.slice(startIndex, startIndex + count),
+                    getObvMacdValues: (startIndex, count) => ({
+                        macd: obvMacd.slice(startIndex, startIndex + count),
+                        signal: obvSignal.slice(startIndex, startIndex + count),
+                    }),
+                    getRsiValues: (startIndex, count) => rsiValues.slice(startIndex, startIndex + count),
+                    getMacdValues: (startIndex, count) => ({
+                        macd: macdValues.slice(startIndex, startIndex + count),
+                        signal: macdSignal.slice(startIndex, startIndex + count),
+                    }),
+                    getCurrentInterval: () => currentInterval,
+                    formatTime: (date) => UtilsModule.formatTime(date, currentInterval),
+                    getCurrentSymbol: () => currentSymbol,
+                    getAverageVolume: () => {
+                        const data = liveCandle ? [...chartData, liveCandle] : chartData;
+                        return _calculateAverageVolume(data);
+                    },
+                });
+            })();
+
+            // ------------------ SECTION: ChartModule ------------------
+            // Dependencies: ChartDataModule, EventEmitter, CONFIG, UtilsModule
+            /**
+             * Manages chart rendering and user interaction.
+             */
+            const ChartModule = (function () {
+                let viewport = { candleStartIndex: 0, candleCount: 50, minPrice: 0, maxPrice: 100 };
+                let zoomFactor = 1;
+                let priceOffset = 0;
+                let isDragging = false;
+                let dragMode = null;
+                let lastX = 0;
+                let lastY = 0;
+                let drawPending = false;
+                let mouseX = null;
+                let mouseY = null;
+                let lastOhlc = "";
+                let suppressDraw = false;
+                let cachedStaticChart = null; // Cache for static elements
+
+                // Sub-structure: Grouping functions for better manageability
+                const events = {
+                    addEventListeners() {
+                        const bitcoinChart = document.getElementById("bitcoinChart");
+                        const obvMacdChart = document.getElementById("obvMacdChart");
+                        if (!bitcoinChart || !obvMacdChart) {
+                            ErrorHandlerModule.handleError("Canvas not found");
+                            return;
+                        }
+                        const canvases = [bitcoinChart, obvMacdChart];
+                        canvases.forEach((canvas) => {
+                            canvas.addEventListener("wheel", events.handleScroll);
+                            canvas.addEventListener("mousedown", events.handleMouseDown);
+                            canvas.addEventListener("mousemove", events.handleMouseMove);
+                            canvas.addEventListener("mouseup", events.handleMouseUp);
+                            canvas.addEventListener("contextmenu", events.handleContextMenu);
+                            canvas.addEventListener("dblclick", rendering.resetChartPosition);
+                        });
+                    },
+                    handleScroll(event) {
+                        event.preventDefault();
+                        const delta = Math.sign(event.deltaY);
+                        const oldCandleCount = viewport.candleCount;
+                        viewport.candleCount += delta * 10;
+                        viewport.candleCount = Math.max(CONFIG.MIN_CANDLES, Math.min(CONFIG.MAX_CANDLES, viewport.candleCount));
+
+                        const chartData = ChartDataModule.getChartData();
+                        const liveCandle = ChartDataModule.getLiveCandle();
+                        if (liveCandle) {
+                            viewport.candleStartIndex = Math.max(0, chartData.length - viewport.candleCount + 1);
+                        } else {
+                            viewport.candleStartIndex = Math.max(0, Math.min(chartData.length - viewport.candleCount, viewport.candleStartIndex));
+                        }
+
+                        zoomFactor *= oldCandleCount / viewport.candleCount;
+                        zoomFactor = Math.max(CONFIG.MIN_ZOOM, Math.min(CONFIG.MAX_ZOOM, zoomFactor));
+                        rendering.updateViewport();
+                        rendering.invalidateCache(); // Invalidate on zoom/scroll
+                        rendering.requestDraw();
+                    },
+                    handleMouseDown(event) {
+                        if (event.button === 0) {
+                            event.preventDefault();
+                            isDragging = true;
+                            lastX = event.clientX;
+                            lastY = event.clientY;
+                            const canvas = event.target;
+                            const rect = canvas.getBoundingClientRect();
+                            const relativeX = event.clientX - rect.left;
+                            dragMode = relativeX > canvas.width - 100 ? "zoom" : "pan";
+                        }
+                    },
+                    handleMouseMove(event) {
+                        const bitcoinChart = document.getElementById("bitcoinChart");
+                        const obvMacdChart = document.getElementById("obvMacdChart");
+                        const rect = bitcoinChart.getBoundingClientRect();
+                        const obvRect = selectedIndicator !== null ? obvMacdChart.getBoundingClientRect() : { top: Infinity };
+                        mouseX = event.clientX - rect.left;
+                        mouseY = event.clientY - rect.top;
+                        if (event.clientY >= obvRect.top) {
+                            mouseY = null; // No horizontal crosshair on OBV or beyond
+                        }
+                        if (isDragging) {
+                            const deltaX = event.clientX - lastX;
+                            const deltaY = lastY - event.clientY;
+
+                            if (dragMode === "zoom") {
+                                const zoomChange = Math.exp(-deltaY * 0.005);
+                                zoomFactor *= zoomChange;
+                                zoomFactor = Math.max(CONFIG.MIN_ZOOM, Math.min(CONFIG.MAX_ZOOM, zoomFactor));
+                            } else if (dragMode === "pan") {
+                                const pricePerPixel = (viewport.maxPrice - viewport.minPrice) / (bitcoinChart.height - 30);
+                                priceOffset -= deltaY * pricePerPixel;
+                                viewport.candleStartIndex -= deltaX * (viewport.candleCount / bitcoinChart.width);
+                                viewport.candleStartIndex = Math.max(0, Math.min(ChartDataModule.getChartData().length - viewport.candleCount, viewport.candleStartIndex));
+                            }
+
+                            lastX = event.clientX;
+                            lastY = event.clientY;
+                            rendering.updateViewport();
+                            rendering.invalidateCache(); // Invalidate on pan/zoom
+                        }
+                        rendering.requestDraw();
+                    },
+                    handleMouseUp() {
+                        isDragging = false;
+                        dragMode = null;
+                    },
+                    handleContextMenu(event) {
+                        event.preventDefault();
+                    },
+                };
+
+                const rendering = {
+                    resetChartPosition() {
+                        zoomFactor = 1;
+                        priceOffset = 0;
+                        rendering.updateViewport({ reset: true });
+                        rendering.invalidateCache();
+                        rendering.requestDraw();
+                    },
+                    updateViewport({ reset = false, preserveZoom = false, previousViewport = null } = {}) {
+                        const chartData = ChartDataModule.getChartData();
+                        if (reset || chartData.length === 0) {
+                            viewport.candleStartIndex = Math.max(0, chartData.length - viewport.candleCount);
+                            const displayData = chartData.slice(viewport.candleStartIndex, viewport.candleStartIndex + viewport.candleCount);
+                            const liveCandle = ChartDataModule.getLiveCandle();
+                            if (liveCandle && !isNaN(liveCandle.close)) displayData.push(liveCandle);
+                            const prices = displayData.flatMap((d) => [d.high, d.low]).filter((p) => !isNaN(p));
+                            const smaValues = ChartDataModule.getSmaValues(viewport.candleStartIndex, displayData.length);
+                            if (smaValues.length > 0) prices.push(...smaValues.filter((v) => !isNaN(v)));
+                            if (prices.length > 0) {
+                                viewport.minPrice = Math.min(...prices);
+                                viewport.maxPrice = Math.max(...prices);
+                                const range = viewport.maxPrice - viewport.minPrice;
+                                viewport.minPrice -= range * 0.1;
+                                viewport.maxPrice += range * 0.1;
+                            } else {
+                                viewport.minPrice = 0;
+                                viewport.maxPrice = 100;
+                            }
+                            zoomFactor = 1;
+                            priceOffset = 0;
+                        } else if (preserveZoom && previousViewport) {
+                            viewport.candleCount = previousViewport.candleCount;
+                            // Horizontal: Erhalte alten Start, aber passe für Data-Shift an
+                            let newStartIndex = previousViewport.candleStartIndex;
+                            const length = chartData.length; // Aktuelle Länge (konstant)
+                            const wasAtEnd = previousViewport.candleStartIndex + previousViewport.candleCount >= length; // War das Ende sichtbar? (Toleranz >= length, da liveCandle extra)
+                            if (!wasAtEnd) {
+                                newStartIndex -= 1; // Shift links, um gleiche Daten zu halten (kein Auto-Scroll)
+                            }
+                            // Immer: Auto-Scroll bei End-View (setzt implizit +0, was durch Shift +1 effektiv ist)
+                            viewport.candleStartIndex = Math.max(0, Math.min(length - viewport.candleCount, newStartIndex));
+
+                            viewport.minPrice = previousViewport.minPrice;
+                            viewport.maxPrice = previousViewport.maxPrice;
+                            zoomFactor = previousViewport.zoomFactor || zoomFactor;
+                            priceOffset = previousViewport.priceOffset || priceOffset;
+
+                            // Vertikal: Keine Neuzentrierung! Stattdessen erweitern, wenn neue Daten außerhalb
+                            const displayData = chartData.slice(viewport.candleStartIndex, viewport.candleStartIndex + viewport.candleCount);
+                            const liveCandle = ChartDataModule.getLiveCandle();
+                            if (liveCandle) displayData.push(liveCandle);
+                            const prices = displayData.flatMap((d) => [d.high, d.low]).filter((p) => !isNaN(p));
+                            const smaValues = ChartDataModule.getSmaValues(viewport.candleStartIndex, displayData.length);
+                            if (smaValues.length > 0) prices.push(...smaValues.filter((v) => !isNaN(v)));
+
+                            if (prices.length > 0) {
+                                const newMin = Math.min(...prices);
+                                const newMax = Math.max(...prices);
+                                const range = viewport.maxPrice - viewport.minPrice;
+                                if (newMin < viewport.minPrice) {
+                                    viewport.minPrice = newMin - range * 0.05; // Erweitere nach unten
+                                }
+                                if (newMax > viewport.maxPrice) {
+                                    viewport.maxPrice = newMax + range * 0.05; // Erweitere nach oben
+                                }
+                            }
+                        } else {
+                            viewport.candleStartIndex = Math.max(0, Math.min(chartData.length - viewport.candleCount, viewport.candleStartIndex));
+                        }
+                        rendering.invalidateCache(); // Invalidate cache on viewport update
+                    },
+                    invalidateCache() {
+                        cachedStaticChart = null;
+                    },
+                    drawChart() {
+                        drawPending = false;
+                        const bitcoinChart = document.getElementById("bitcoinChart");
+                        const obvMacdChart = document.getElementById("obvMacdChart");
+                        if (!bitcoinChart || !obvMacdChart) {
+                            ErrorHandlerModule.handleError("Canvas element not found");
+                            return;
+                        }
+                        const ctx = bitcoinChart.getContext("2d");
+                        const obvCtx = obvMacdChart.getContext("2d");
+                        if (!ctx || !obvCtx) {
+                            ErrorHandlerModule.handleError("Failed to get canvas context");
+                            return;
+                        }
+
+                        const container = document.getElementById("chart-container");
+                        const containerHeight = container.clientHeight;
+
+                        bitcoinChart.width = container.clientWidth;
+                        obvMacdChart.width = container.clientWidth;
+
+                        let mainHeight, indicatorHeight;
+                        if (selectedIndicator === null) {
+                          mainHeight = containerHeight;
+                          indicatorHeight = 0;
+                          obvMacdChart.style.display = 'none';
+                        } else {
+                          mainHeight = Math.floor(containerHeight * 0.8);
+                          indicatorHeight = Math.floor(containerHeight * 0.2);
+                          obvMacdChart.style.display = 'block';
+                        }
+
+                        bitcoinChart.height = mainHeight;
+                        obvMacdChart.height = indicatorHeight;
+
+                        ctx.fillStyle = "#191a20";
+                        ctx.fillRect(0, 0, bitcoinChart.width, bitcoinChart.height);
+                        obvCtx.fillStyle = "#191a20";
+                        obvCtx.fillRect(0, 0, obvMacdChart.width, obvMacdChart.height);
+
+                        const chartData = ChartDataModule.getChartData();
+                        const liveCandle = ChartDataModule.getLiveCandle();
+                        const startIndex = Math.round(viewport.candleStartIndex);
+                        let displayData = [...chartData.slice(startIndex, startIndex + viewport.candleCount)];
+                        const hasLiveCandle = liveCandle && startIndex + viewport.candleCount >= chartData.length && !isNaN(liveCandle.close) && liveCandle.close !== null;
+
+                        if (displayData.length === 0 && !hasLiveCandle) {
+                            ctx.fillStyle = "#ffffff";
+                            ctx.font = "16px Arial";
+                            ctx.textAlign = "center";
+                            ctx.fillText("No data available", bitcoinChart.width / 2, bitcoinChart.height / 2);
+                            return;
+                        }
+
+                        if (hasLiveCandle) {
+                            displayData = [...displayData.slice(0, -1), liveCandle];
+                        }
+
+                        const chartWidth = bitcoinChart.width - 100;
+                        const chartHeight = bitcoinChart.height - 30;
+                        const volumeHeight = chartHeight * 0.2;
+                        const priceChartHeight = chartHeight - volumeHeight;
+                        const gapFactor = Math.max(0.1, 0.2 - (viewport.candleCount / CONFIG.MAX_CANDLES) * 0.1);
+                        const totalWidthPerCandle = displayData.length > 0 ? chartWidth / displayData.length : chartWidth;
+                        const gap = Math.max(CONFIG.MIN_GAP, totalWidthPerCandle * gapFactor);
+                        let candleWidth = totalWidthPerCandle - gap;
+                        candleWidth = Math.max(CONFIG.MIN_CANDLE_WIDTH, candleWidth);
+
+                        const prices = displayData.flatMap((d) => [d.high, d.low]).filter((p) => !isNaN(p));
+                        const smaValues = ChartDataModule.getSmaValues(startIndex, displayData.length);
+                        if (smaValues.length > 0) prices.push(...smaValues.filter((v) => !isNaN(v)));
+                        const baseMinPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                        const baseMaxPrice = prices.length > 0 ? Math.max(...prices) : 100;
+                        const baseRange = baseMaxPrice - baseMinPrice || 1;
+
+                        const centerPrice = (baseMaxPrice + baseMinPrice) / 2 + priceOffset;
+                        const zoomedRange = baseRange * zoomFactor;
+                        viewport.minPrice = centerPrice - zoomedRange / 2;
+                        viewport.maxPrice = centerPrice + zoomedRange / 2;
+                        const priceRange = viewport.maxPrice - viewport.minPrice || 1;
+
+                        function scaleY(price) {
+                            if (isNaN(price)) return priceChartHeight + 20;
+                            return priceChartHeight - ((price - viewport.minPrice) / priceRange) * priceChartHeight + 20;
+                        }
+
+                        function getPriceFromY(y) {
+                            return viewport.minPrice + (1 - (y - 20) / priceChartHeight) * priceRange;
+                        }
+
+                        function getTimeFromX(x) {
+                            if (displayData.length === 0) return null;
+                            const index = Math.floor((x - 10) / (candleWidth + gap));
+                            if (index < 0 || index >= displayData.length) return null;
+                            return displayData[index].time;
+                        }
+
+                        const volumes = displayData.map((d) => d.volume || 0).filter((v) => !isNaN(v));
+                        const maxVolume = Math.max(...volumes, 1);
+                        function scaleVolume(volume) {
+                            if (isNaN(volume)) return chartHeight;
+                            return chartHeight - (volume / maxVolume) * volumeHeight;
+                        }
+
+                        // Cache static parts if not cached or invalidated
+                        if (!cachedStaticChart || cachedStaticChart.width !== bitcoinChart.width || cachedStaticChart.height !== bitcoinChart.height) {
+                            cachedStaticChart = document.createElement('canvas');
+                            cachedStaticChart.width = bitcoinChart.width;
+                            cachedStaticChart.height = bitcoinChart.height;
+                            const cacheCtx = cachedStaticChart.getContext('2d');
+                            cacheCtx.fillStyle = "#191a20";
+                            cacheCtx.fillRect(0, 0, cachedStaticChart.width, cachedStaticChart.height);
+
+                            // Draw static volume bars (historical only, exclude live if hasLiveCandle)
+                            displayData.slice(0, hasLiveCandle ? -1 : undefined).forEach((candle, index) => {
+                                const x = index * (candleWidth + gap) + 10;
+                                const volume = candle.volume || 0;
+                                const volumeY = scaleVolume(volume);
+                                cacheCtx.fillStyle = candle.close >= candle.open ? "rgba(45, 189, 133, 0.4)" : "rgba(246, 70, 93, 0.4)";
+                                if (!isNaN(volumeY) && volumeY <= chartHeight) {
+                                    cacheCtx.fillRect(x, volumeY, candleWidth, chartHeight - volumeY);
+                                }
+                            });
+
+                            // Draw static historical candles (exclude live)
+                            displayData.slice(0, hasLiveCandle ? -1 : undefined).forEach((candle, index) => {
+                                const x = index * (candleWidth + gap) + 10;
+                                const openY = scaleY(candle.open);
+                                const closeY = scaleY(candle.close);
+                                const highY = scaleY(candle.high);
+                                const lowY = scaleY(candle.low);
+
+                                const bodyColor = candle.close >= candle.open ? "#2dbd85" : "#f6465d";
+                                cacheCtx.beginPath();
+                                cacheCtx.moveTo(x + candleWidth / 2, highY);
+                                cacheCtx.lineTo(x + candleWidth / 2, lowY);
+                                cacheCtx.strokeStyle = bodyColor;
+                                cacheCtx.stroke();
+
+                                cacheCtx.fillStyle = bodyColor;
+                                const bodyY = Math.min(openY, closeY);
+                                const bodyHeight = Math.abs(openY - closeY) || 1;
+                                if (!isNaN(bodyY) && !isNaN(bodyHeight)) {
+                                    cacheCtx.fillRect(x, bodyY, candleWidth, bodyHeight);
+                                }
+                            });
+
+                            // Draw static SMA line (full, as it may depend on live but we approximate without for cache)
+                            cacheCtx.beginPath();
+                            cacheCtx.strokeStyle = "#FFFFFF";
+                            cacheCtx.lineWidth = 2;
+                            let firstPoint = true;
+                            smaValues.forEach((value, index) => {
+                                const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                const y = scaleY(value);
+                                if (isNaN(y)) return;
+                                if (firstPoint) {
+                                    cacheCtx.moveTo(x, y);
+                                    firstPoint = false;
+                                } else {
+                                    cacheCtx.lineTo(x, y);
+                                }
+                            });
+                            cacheCtx.stroke();
+
+                            // Draw static price labels (y-axis)
+                            cacheCtx.fillStyle = "#ffffff";
+                            cacheCtx.font = "12px Arial";
+                            cacheCtx.textAlign = "right";
+                            for (let i = 0; i <= 5; i++) {
+                                const price = viewport.minPrice + (priceRange * i) / 5;
+                                const y = scaleY(price);
+                                if (!isNaN(y)) {
+                                    cacheCtx.fillText(price.toFixed(2), bitcoinChart.width - 5, y + 5);
+                                }
+                            }
+                            cacheCtx.textAlign = "left";
+
+                            // Draw static time labels (x-axis)
+                            displayData.forEach((candle, index) => {
+                                if (index % Math.ceil(viewport.candleCount / 10) === 0) {
+                                    const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                    const timeStr = ChartDataModule.formatTime(candle.time, ChartDataModule.getCurrentInterval());
+                                    cacheCtx.fillText(timeStr, x - 20, chartHeight + 20);
+                                }
+                            });
+                        }
+
+                        // Draw cached static chart
+                        ctx.drawImage(cachedStaticChart, 0, 0);
+
+                        // Draw dynamic parts (live candle if present, current price line, liquidation lines, crosshairs, etc.)
+                        if (hasLiveCandle && !isNaN(liveCandle.close) && liveCandle.close > 0) {
+                            const x = (displayData.length - 1) * (candleWidth + gap) + 10;
+                            // Dynamic volume for live candle
+                            const volume = liveCandle.volume || 0;
+                            const volumeY = scaleVolume(volume);
+                            ctx.fillStyle = liveCandle.close >= liveCandle.open ? "rgba(45, 189, 133, 0.4)" : "rgba(246, 70, 93, 0.4)";
+                            if (!isNaN(volumeY) && volumeY <= chartHeight) {
+                                ctx.fillRect(x, volumeY, candleWidth, chartHeight - volumeY);
+                            }
+
+                            // Dynamic live candle body and wick
+                            const openY = scaleY(liveCandle.open);
+                            const closeY = scaleY(liveCandle.close);
+                            const highY = scaleY(liveCandle.high);
+                            const lowY = scaleY(liveCandle.low);
+
+                            const bodyColor = liveCandle.close >= liveCandle.open ? "#2dbd85" : "#f6465d";
+                            ctx.beginPath();
+                            ctx.moveTo(x + candleWidth / 2, highY);
+                            ctx.lineTo(x + candleWidth / 2, lowY);
+                            ctx.strokeStyle = bodyColor;
+                            ctx.stroke();
+
+                            ctx.fillStyle = bodyColor;
+                            const bodyY = Math.min(openY, closeY);
+                            const bodyHeight = Math.abs(openY - closeY) || 1;
+                            if (!isNaN(bodyY) && !isNaN(bodyHeight)) {
+                                ctx.fillRect(x, bodyY, candleWidth, bodyHeight);
+                            }
+
+                            // Dynamic current price line
+                            const currentPriceY = scaleY(liveCandle.close);
+                            const lineColor = liveCandle.close >= liveCandle.open ? "#2dbd85" : "#f6465d";
+
+                            if (!isNaN(currentPriceY)) {
+                                ctx.beginPath();
+                                ctx.setLineDash([2, 2]);
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = lineColor;
+                                ctx.moveTo(10, currentPriceY);
+                                ctx.lineTo(bitcoinChart.width - 50, currentPriceY);
+                                ctx.stroke();
+
+                                const priceText = liveCandle.close.toFixed(2);
+                                ctx.font = "12px Arial";
+                                const textWidth = ctx.measureText(priceText).width + 5;
+                                const linealStartX = bitcoinChart.width - 5 - textWidth;
+                                ctx.beginPath();
+                                ctx.moveTo(linealStartX, 20);
+                                ctx.lineTo(linealStartX, currentPriceY - 10);
+                                ctx.moveTo(linealStartX, currentPriceY + 10);
+                                ctx.lineTo(linealStartX, chartHeight + 20);
+                                ctx.stroke();
+
+                                ctx.fillStyle = lineColor;
+                                ctx.fillRect(linealStartX, currentPriceY - 10, textWidth, 20);
+                                ctx.fillStyle = "#ffffff";
+                                ctx.textAlign = "right";
+                                ctx.fillText(priceText, bitcoinChart.width - 5, currentPriceY + 5);
+                            }
+                        }
+
+                        // Dynamic liquidation lines
+                        if (liqLong !== null && !isNaN(liqLong)) {
+                            const liqLongY = scaleY(liqLong);
+                            if (!isNaN(liqLongY)) {
+                                ctx.beginPath();
+                                ctx.setLineDash([5, 5]);
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = "#2dbd85"; // Grün für Long
+                                ctx.moveTo(10, liqLongY);
+                                ctx.lineTo(bitcoinChart.width - 50, liqLongY);
+                                ctx.stroke();
+
+                                // Label
+                                const labelText = `Liq Long: ${liqLong.toFixed(2)}`;
+                                const textWidth = ctx.measureText(labelText).width + 5;
+                                ctx.fillStyle = "#2dbd85";
+                                ctx.fillRect(bitcoinChart.width - 5 - textWidth, liqLongY - 10, textWidth, 20);
+                                ctx.fillStyle = "#ffffff";
+                                ctx.textAlign = "right";
+                                ctx.fillText(labelText, bitcoinChart.width - 5, liqLongY + 5);
+                            }
+                        }
+
+                        if (liqShort !== null && !isNaN(liqShort)) {
+                            const liqShortY = scaleY(liqShort);
+                            if (!isNaN(liqShortY)) {
+                                ctx.beginPath();
+                                ctx.setLineDash([5, 5]);
+                                ctx.lineWidth = 1;
+                                ctx.strokeStyle = "#f6465d"; // Rot für Short
+                                ctx.moveTo(10, liqShortY);
+                                ctx.lineTo(bitcoinChart.width - 50, liqShortY);
+                                ctx.stroke();
+
+                                // Label
+                                const labelText = `Liq Short: ${liqShort.toFixed(2)}`;
+                                const textWidth = ctx.measureText(labelText).width + 5;
+                                ctx.fillStyle = "#f6465d";
+                                ctx.fillRect(bitcoinChart.width - 5 - textWidth, liqShortY - 10, textWidth, 20);
+                                ctx.fillStyle = "#ffffff";
+                                ctx.textAlign = "right";
+                                ctx.fillText(labelText, bitcoinChart.width - 5, liqShortY + 5);
+                            }
+                        }
+
+                        // Dynamic crosshairs
+                        if (mouseX !== null && mouseY !== null && mouseX >= 10 && mouseX <= chartWidth + 10 && mouseY >= 20 && mouseY <= chartHeight + 20) {
+                            ctx.beginPath();
+                            ctx.setLineDash([2, 2]);
+                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.moveTo(10, mouseY);
+                            ctx.lineTo(bitcoinChart.width - 50, mouseY);
+                            ctx.stroke();
+
+                            const price = getPriceFromY(mouseY);
+                            if (!isNaN(price)) {
+                                const priceText = price.toFixed(2);
+                                const textWidth = ctx.measureText(priceText).width + 5;
+                                ctx.fillStyle = "#ffffff";
+                                ctx.fillRect(bitcoinChart.width - 5 - textWidth, mouseY - 10, textWidth, 20);
+                                ctx.fillStyle = "#000000";
+                                ctx.font = "12px Arial";
+                                ctx.textAlign = "right";
+                                ctx.fillText(priceText, bitcoinChart.width - 5, mouseY + 5);
+                            }
+
+                            ctx.beginPath();
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.moveTo(mouseX, 20);
+                            ctx.lineTo(mouseX, chartHeight);
+                            ctx.stroke();
+
+                            if (selectedIndicator !== null) {
+                                obvCtx.beginPath();
+                                obvCtx.strokeStyle = "#ffffff";
+                                obvCtx.moveTo(mouseX, 0);
+                                obvCtx.lineTo(mouseX, obvMacdChart.height);
+                                obvCtx.stroke();
+                            }
+
+                            const time = getTimeFromX(mouseX);
+                            if (time) {
+                                const timeStr = ChartDataModule.formatTime(time, ChartDataModule.getCurrentInterval());
+                                const textWidth = ctx.measureText(timeStr).width + 5;
+                                const textX = Math.max(10, Math.min(mouseX - textWidth / 2, chartWidth - textWidth + 10));
+                                ctx.fillStyle = "#ffffff";
+                                ctx.fillRect(textX, chartHeight + 5, textWidth, 20);
+                                ctx.fillStyle = "#000000";
+                                ctx.font = "12px Arial";
+                                ctx.textAlign = "left";
+                                ctx.fillText(timeStr, textX + 2, chartHeight + 20);
+                            }
+                        }
+
+                        ctx.restore();
+
+                        const ohlcInfo = document.getElementById("ohlcInfo");
+                        if (displayData.length > 0 && lastOhlc === "") {
+                            const candle = displayData[displayData.length - 1];
+                            const isLive = hasLiveCandle;
+                            lastOhlc = `
+                                O: ${candle.open.toFixed(2)}
+                                H: ${candle.high.toFixed(2)}
+                                L: ${candle.low.toFixed(2)}
+                                C: ${candle.close.toFixed(2)}
+                                Vol: ${candle.volume.toFixed(0)}
+                                ${isLive ? "(Live)" : ""}
+                            `;
+                        }
+                        if (mouseX !== null && mouseY !== null && mouseX >= 10 && mouseX <= chartWidth + 10 && mouseY >= 20 && mouseY <= chartHeight + 20) {
+                            const index = Math.floor((mouseX - 10) / (candleWidth + gap));
+                            if (index >= 0 && index < displayData.length) {
+                                const candle = displayData[index];
+                                const isLive = hasLiveCandle && index === displayData.length - 1;
+                                lastOhlc = `
+                                    O: ${candle.open.toFixed(2)}
+                                    H: ${candle.high.toFixed(2)}
+                                    L: ${candle.low.toFixed(2)}
+                                    C: ${candle.close.toFixed(2)}
+                                    Vol: ${candle.volume.toFixed(0)}
+                                    ${isLive ? "(Live)" : ""}
+                                `;
+                            }
+                        }
+                        ohlcInfo.innerHTML = lastOhlc;
+
+                        // Draw indicator based on selection
+                        if (selectedIndicator === 'obv-macd') {
+                            const { macd: obvMacdValues, signal: obvSignalValues } = ChartDataModule.getObvMacdValues(startIndex, displayData.length);
+                            const obvValues = [...obvMacdValues, ...obvSignalValues].filter((v) => !isNaN(v));
+                            let obvMin = obvValues.length > 0 ? Math.min(...obvValues) : -1;
+                            let obvMax = obvValues.length > 0 ? Math.max(...obvValues) : 1;
+                            obvMin = Math.min(obvMin, 0);
+                            obvMax = Math.max(obvMax, 0);
+                            const obvPriceRange = obvMax - obvMin || 2;
+
+                            function scaleObvY(value) {
+                                if (isNaN(value)) return obvMacdChart.height / 2;
+                                return obvMacdChart.height - ((value - obvMin) / obvPriceRange) * obvMacdChart.height;
+                            }
+
+                            obvMacdValues.forEach((value, index) => {
+                                const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                const y = scaleObvY(value);
+                                const zeroY = scaleObvY(0);
+                                obvCtx.beginPath();
+                                obvCtx.moveTo(x, zeroY);
+                                obvCtx.lineTo(x, y);
+                                obvCtx.strokeStyle = value >= 0 ? "#2dbd85" : "#f6465d";
+                                obvCtx.lineWidth = candleWidth;
+                                obvCtx.stroke();
+                            });
+
+                            obvCtx.beginPath();
+                            obvCtx.strokeStyle = "#FFFFFF";
+                            obvCtx.lineWidth = 2;
+                            let firstObvPoint = true;
+                            obvSignalValues.forEach((value, index) => {
+                                const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                const y = scaleObvY(value);
+                                if (isNaN(y)) return;
+                                if (firstObvPoint) {
+                                    obvCtx.moveTo(x, y);
+                                    firstObvPoint = false;
+                                } else {
+                                    obvCtx.lineTo(x, y);
+                                }
+                            });
+                            obvCtx.stroke();
+
+                            const zeroY = scaleObvY(0);
+                            obvCtx.beginPath();
+                            obvCtx.strokeStyle = "#444444";
+                            obvCtx.lineWidth = 1;
+                            obvCtx.moveTo(10, zeroY);
+                            obvCtx.lineTo(obvMacdChart.width - 50, zeroY);
+                            obvCtx.stroke();
+
+                            obvCtx.fillStyle = "#ffffff";
+                            obvCtx.font = "12px Arial";
+                            obvCtx.textAlign = "right";
+                            for (let i = 0; i <= 2; i++) {
+                                const price = obvMin + (obvPriceRange * i) / 2;
+                                const y = scaleObvY(price);
+                                if (!isNaN(y)) {
+                                    obvCtx.fillText(price.toFixed(2), obvMacdChart.width - 5, y + 5);
+                                }
+                            }
+                        } else if (selectedIndicator === 'rsi') {
+                            const rsiValues = ChartDataModule.getRsiValues(startIndex, displayData.length);
+                            const rsiMin = 0;
+                            const rsiMax = 100;
+                            const rsiRange = rsiMax - rsiMin;
+
+                            function scaleRsiY(value) {
+                                if (isNaN(value)) return obvMacdChart.height / 2;
+                                return obvMacdChart.height - ((value - rsiMin) / rsiRange) * obvMacdChart.height;
+                            }
+
+                            obvCtx.beginPath();
+                            obvCtx.strokeStyle = "#FFFF00"; // Yellow for RSI
+                            obvCtx.lineWidth = 2;
+                            let firstRsiPoint = true;
+                            rsiValues.forEach((value, index) => {
+                                if (isNaN(value)) return;
+                                const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                const y = scaleRsiY(value);
+                                if (firstRsiPoint) {
+                                    obvCtx.moveTo(x, y);
+                                    firstRsiPoint = false;
+                                } else {
+                                    obvCtx.lineTo(x, y);
+                                }
+                            });
+                            obvCtx.stroke();
+
+                            [30, 50, 70].forEach(level => {
+                                const y = scaleRsiY(level);
+                                obvCtx.beginPath();
+                                obvCtx.setLineDash([5, 5]);
+                                obvCtx.strokeStyle = level === 50 ? "#888888" : "#FF0000";
+                                obvCtx.lineWidth = 1;
+                                obvCtx.moveTo(10, y);
+                                obvCtx.lineTo(obvMacdChart.width - 50, y);
+                                obvCtx.stroke();
+                            });
+                            obvCtx.setLineDash([]);
+
+                            obvCtx.fillStyle = "#ffffff";
+                            obvCtx.font = "12px Arial";
+                            obvCtx.textAlign = "right";
+                            [0, 30, 50, 70, 100].forEach(level => {
+                                const y = scaleRsiY(level);
+                                if (!isNaN(y)) {
+                                    obvCtx.fillText(level.toFixed(0), obvMacdChart.width - 5, y + 5);
+                                }
+                            });
+                        } else if (selectedIndicator === 'macd') {
+                            const { macd: macdValues, signal: macdSignalValues } = ChartDataModule.getMacdValues(startIndex, displayData.length);
+                            const macdVals = [...macdValues, ...macdSignalValues].filter((v) => !isNaN(v));
+                            let macdMin = macdVals.length > 0 ? Math.min(...macdVals) : -1;
+                            let macdMax = macdVals.length > 0 ? Math.max(...macdVals) : 1;
+                            macdMin = Math.min(macdMin, 0);
+                            macdMax = Math.max(macdMax, 0);
+                            const macdRange = macdMax - macdMin || 2;
+
+                            function scaleMacdY(value) {
+                                if (isNaN(value)) return obvMacdChart.height / 2;
+                                return obvMacdChart.height - ((value - macdMin) / macdRange) * obvMacdChart.height;
+                            }
+
+                            macdValues.forEach((value, index) => {
+                                const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                const y = scaleMacdY(value);
+                                const zeroY = scaleMacdY(0);
+                                obvCtx.beginPath();
+                                obvCtx.moveTo(x, zeroY);
+                                obvCtx.lineTo(x, y);
+                                obvCtx.strokeStyle = value >= 0 ? "#2dbd85" : "#f6465d";
+                                obvCtx.lineWidth = candleWidth;
+                                obvCtx.stroke();
+                            });
+
+                            obvCtx.beginPath();
+                            obvCtx.strokeStyle = "#FFFFFF";
+                            obvCtx.lineWidth = 2;
+                            let firstMacdPoint = true;
+                            macdSignalValues.forEach((value, index) => {
+                                const x = index * (candleWidth + gap) + 10 + candleWidth / 2;
+                                const y = scaleMacdY(value);
+                                if (isNaN(y)) return;
+                                if (firstMacdPoint) {
+                                    obvCtx.moveTo(x, y);
+                                    firstMacdPoint = false;
+                                } else {
+                                    obvCtx.lineTo(x, y);
+                                }
+                            });
+                            obvCtx.stroke();
+
+                            const zeroY = scaleMacdY(0);
+                            obvCtx.beginPath();
+                            obvCtx.strokeStyle = "#444444";
+                            obvCtx.lineWidth = 1;
+                            obvCtx.moveTo(10, zeroY);
+                            obvCtx.lineTo(obvMacdChart.width - 50, zeroY);
+                            obvCtx.stroke();
+
+                            obvCtx.fillStyle = "#ffffff";
+                            obvCtx.font = "12px Arial";
+                            obvCtx.textAlign = "right";
+                            for (let i = 0; i <= 2; i++) {
+                                const price = macdMin + (macdRange * i) / 2;
+                                const y = scaleMacdY(price);
+                                if (!isNaN(y)) {
+                                    obvCtx.fillText(price.toFixed(2), obvMacdChart.width - 5, y + 5);
+                                }
+                            }
+                        } else {
+                            // No indicator selected, clear the canvas
+                            obvCtx.fillStyle = "#191a20";
+                            obvCtx.fillRect(0, 0, obvMacdChart.width, obvMacdChart.height);
+                        }
+                    },
+                    requestDraw() {
+                        if (!drawPending) {
+                            drawPending = true;
+                            requestAnimationFrame(() => {
+                                rendering.drawChart();
+                                drawPending = false;
+                            });
+                        }
+                    },
+                };
+
+                EventEmitter.on("chart-data-updated", (chartData, liveCandle) => {
+                    if (suppressDraw) return;
+                    lastOhlc = "";
+                    rendering.invalidateCache(); // Invalidate on data update
+                    rendering.requestDraw();
+                });
+
+                EventEmitter.on("indicator-changed", () => {
+                    rendering.invalidateCache(); // Invalidate on indicator change
+                    rendering.requestDraw();
+                });
+
+                return Object.freeze({
+                    init() {
+                        events.addEventListeners();
+                        rendering.updateViewport({ reset: true });
+                        rendering.requestDraw();
+                    },
+                    updateViewport: rendering.updateViewport,
+                    getViewport: () => ({ ...viewport, zoomFactor, priceOffset }),
+                    requestDraw: rendering.requestDraw,
+                    resetChartPosition: rendering.resetChartPosition,
+                    setSuppressDraw: (bool) => { suppressDraw = bool; },
+                });
+            })();
+
+            function executeCustomScript(script) {
+                if (!script.startsWith("if(") && !script.startsWith("wenn(")) {
+                    throw new Error("Script must start with 'if(' or 'wenn('");
+                }
+                const prefix = script.startsWith("if(") ? "if(" : "wenn(";
+                if (!script.endsWith(")")) {
+                    throw new Error("Script must end with ')'");
+                }
+                const inner = script.slice(prefix.length, -1).trim();
+                const parts = inner.split(';');
+                if (parts.length !== 3) {
+                    throw new Error("Invalid script format: condition;then;else");
+                }
+                const conditionStr = parts[0].trim();
+                const thenAction = parts[1].trim();
+                const elseAction = parts[2].trim();
+
+                // Get current values
+                const chartLength = ChartDataModule.getChartData().length;
+                const hasLive = !!ChartDataModule.getLiveCandle();
+                const totalLength = chartLength + (hasLive ? 1 : 0);
+                const rsiValues = ChartDataModule.getRsiValues(0, totalLength);
+                const lastRsi = rsiValues[rsiValues.length - 1];
+                if (isNaN(lastRsi)) throw new Error("RSI value not available");
+
+                const smaValues = ChartDataModule.getSmaValues(0, totalLength);
+                const lastSma = smaValues[smaValues.length - 1];
+                if (isNaN(lastSma)) throw new Error("SMA value not available");
+
+                const lastCandle = hasLive ? ChartDataModule.getLiveCandle() : ChartDataModule.getChartData()[chartLength - 1];
+                const lastClose = lastCandle.close;
+                const lastOpen = lastCandle.open;
+                const lastHigh = lastCandle.high;
+                const lastLow = lastCandle.low;
+                const lastVolume = lastCandle.volume;
+                if (isNaN(lastClose)) throw new Error("Last close not available");
+
+                const previousCandle = hasLive ? ChartDataModule.getChartData()[chartLength - 1] : (chartLength > 1 ? ChartDataModule.getChartData()[chartLength - 2] : null);
+                const previousClose = previousCandle ? previousCandle.close : NaN;
+
+                const { macd: obvMacdValues, signal: obvSignalValues } = ChartDataModule.getObvMacdValues(0, totalLength);
+                const lastObvMacd = obvMacdValues[obvMacdValues.length - 1];
+                const lastObvSignal = obvSignalValues[obvSignalValues.length - 1];
+
+                const { macd: macdValues, signal: macdSignalValues } = ChartDataModule.getMacdValues(0, totalLength);
+                const lastMacd = macdValues[macdValues.length - 1];
+                const lastMacdSignal = macdSignalValues[macdSignalValues.length - 1];
+
+                const averageVolume = ChartDataModule.getAverageVolume();
+                if (isNaN(averageVolume)) throw new Error("Average volume not available (insufficient data)");
+
+                // Parse and evaluate condition
+                const condParts = conditionStr.split('&');
+                let conditionTrue = true;
+                for (let cond of condParts) {
+                    cond = cond.trim();
+                    const match = cond.match(/^(\w+)(>|<|>=|<=|==|!=)([\w.]+)$/);
+                    if (!match) throw new Error(`Invalid condition part: ${cond}`);
+                    const varName = match[1];
+                    const op = match[2];
+                    const right = match[3];
+
+                    let varValue;
+                    if (varName === 'rsi') varValue = lastRsi;
+                    else if (varName === 'lastclose') varValue = lastClose;
+                    else if (varName === 'sma55') varValue = lastSma;
+                    else if (varName === 'open') varValue = lastOpen;
+                    else if (varName === 'high') varValue = lastHigh;
+                    else if (varName === 'low') varValue = lastLow;
+                    else if (varName === 'volume') varValue = lastVolume;
+                    else if (varName === 'previousclose') varValue = previousClose;
+                    else if (varName === 'macd') varValue = lastObvMacd; // Für OBV-MACD, falls gemeint
+                    else if (varName === 'signal') varValue = lastObvSignal;
+                    else if (varName === 'stdmacd') varValue = lastMacd; // Neu: 'stdmacd' für Standard MACD
+                    else if (varName === 'stdsignal') varValue = lastMacdSignal;
+                    else if (varName === 'averagevolume') varValue = averageVolume;
+                    else throw new Error(`Unknown left variable: ${varName}`);
+                    if (isNaN(varValue)) throw new Error(`Value not available for ${varName}`);
+
+                    let rightValue;
+                    if (!isNaN(parseFloat(right))) {
+                        rightValue = parseFloat(right);
+                    } else {
+                        if (right === 'rsi') rightValue = lastRsi;
+                        else if (right === 'lastclose') rightValue = lastClose;
+                        else if (right === 'sma55') rightValue = lastSma;
+                        else if (right === 'open') rightValue = lastOpen;
+                        else if (right === 'high') rightValue = lastHigh;
+                        else if (right === 'low') rightValue = lastLow;
+                        else if (right === 'volume') rightValue = lastVolume;
+                        else if (right === 'previousclose') rightValue = previousClose;
+                        else if (right === 'macd') rightValue = lastObvMacd;
+                        else if (right === 'signal') rightValue = lastObvSignal;
+                        else if (right === 'stdmacd') rightValue = lastMacd;
+                        else if (right === 'stdsignal') rightValue = lastMacdSignal;
+                        else if (right === 'averagevolume') rightValue = averageVolume;
+                        else throw new Error(`Unknown right variable: ${right}`);
+                        if (isNaN(rightValue)) throw new Error(`Value not available for ${right}`);
+                    }
+
+                    let partTrue;
+                    switch (op) {
+                        case '>': partTrue = varValue > rightValue; break;
+                        case '<': partTrue = varValue < rightValue; break;
+                        case '>=': partTrue = varValue >= rightValue; break;
+                        case '<=': partTrue = varValue <= rightValue; break;
+                        case '==': partTrue = varValue === rightValue; break;
+                        case '!=': partTrue = varValue !== rightValue; break;
+                        default: throw new Error(`Unknown operator: ${op}`);
+                    }
+                    conditionTrue = conditionTrue && partTrue;
+                }
+
+                const action = conditionTrue ? thenAction : elseAction;
+                if (action === 'donothing') {
+                    ErrorHandlerModule.handleError("No action taken");
+                    return;
+                }
+
+                // Parse action: long/short(num%risk@numx[,sl=value][,tp=value][,rr=ratio])
+                const actionMatch = action.match(/^(long|short)\((\d+)%risk@(\d+)x(?:,sl=([\d.%]+))?(?:,tp=([\d.%]+))?(?:,rr=([\d.]+))?\)$/);
+                if (!actionMatch) throw new Error(`Invalid action: ${action}`);
+                const direction = actionMatch[1];
+                const riskPercent = parseFloat(actionMatch[2]);
+                const leverage = parseFloat(actionMatch[3]);
+                const sl = actionMatch[4] || null;
+                const tp = actionMatch[5] || null;
+                const rr_ratio_str = actionMatch[6] || null;
+                let rr_ratio = null;
+                if (rr_ratio_str) {
+                    rr_ratio = parseFloat(rr_ratio_str);
+                    if (isNaN(rr_ratio)) throw new Error("Invalid RR value");
+                }
+
+                if (isNaN(riskPercent) || riskPercent <= 0 || riskPercent > 100) throw new Error("Invalid risk percent");
+                if (isNaN(leverage) || leverage < 1 || leverage > TradeModule.getMaxLeverage()) throw new Error("Invalid leverage");
+
+                const capital = TradeModule.getAvailableCapital();
+                const riskAmount = capital * riskPercent / 100;
+                const positionSize = riskAmount * leverage;
+                const symbol = ChartDataModule.getCurrentSymbol();
+                const side = direction === 'long' ? 'BUY' : 'SELL';
+
+                TradeModule.placeOrder(symbol, side, positionSize, leverage, riskPercent, sl, tp, rr_ratio);
+            }
+
+            // ------------------ Initialization (modularized: Divided into sub-functions for better manageability) ------------------
+            // Dependencies: All Modules
+            (async function init() {
+                async function initApiAndData() {
+                    const symbols = await VolumeSortModule.fetchSortedSymbols();
+                    const exchangeInfo = await ApiModule.fetchExchangeInfo();
+                    const symbolPrecisions = Object.fromEntries(
+                        exchangeInfo.symbols.map((s) => [s.symbol, s.quantityPrecision])
+                    );
+                    const symbolConstraints = await ApiModule.fetchSymbolConstraints();
+                    TradeModule.setSymbolPrecisions(symbolPrecisions);
+                    TradeModule.setSymbolConstraints(symbolConstraints);
+                    return symbols;
+                }
+
+                async function initTrade() {
+                    await TradeModule.init();
+                }
+
+                async function initChart() {
+                    await ChartDataModule.init("BTCUSDT", "1h");
+                    ChartModule.init();
+                }
+
+                function initEventListeners(symbols) {
+                    EventEmitter.on("symbol-changed", async (symbol) => {
+                        try {
+                            UiModule.showLoading(true);
+                            TradeModule.updateLeverageForSymbol(symbol);
+                            ChartModule.setSuppressDraw(true);
+                            await ChartDataModule.init(symbol, ChartDataModule.getCurrentInterval());
+                            ChartModule.setSuppressDraw(false);
+                            ChartModule.resetChartPosition();
+                            UiModule.updateTradeInputs(
+                                parseFloat(document.getElementById("riskInput").value),
+                                parseFloat(document.getElementById("leverageInput").value),
+                                TradeModule.getAvailableCapital(),
+                                TradeModule.getMaxLeverage()
+                            );
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Symbol change failed: ${error.message}`);
+                        } finally {
+                            UiModule.showLoading(false);
+                        }
+                    });
+
+                    EventEmitter.on("interval-changed", async (interval) => {
+                        try {
+                            UiModule.showLoading(true);
+                            ChartModule.setSuppressDraw(true);
+                            await ChartDataModule.init(ChartDataModule.getCurrentSymbol(), interval);
+                            ChartModule.setSuppressDraw(false);
+                            ChartModule.resetChartPosition();
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Interval change failed: ${error.message}`);
+                        } finally {
+                            UiModule.showLoading(false);
+                        }
+                    });
+
+                    EventEmitter.on("trade-inputs-changed", () => {
+                        UiModule.updateTradeInputs(
+                            parseFloat(document.getElementById("riskInput").value),
+                            parseFloat(document.getElementById("leverageInput").value),
+                            TradeModule.getAvailableCapital(),
+                            TradeModule.getMaxLeverage()
+                        );
+                    });
+
+                    EventEmitter.on("open-long", () => {
+                        const positionSize = parseFloat(document.getElementById("positionSizeInput").textContent.split(" ")[0]);
+                        const leverage = parseFloat(document.getElementById("leverageInput").value);
+                        const riskPercent = parseFloat(document.getElementById("riskInput").value);
+                        if (!isFinite(positionSize) || positionSize <= 0) {
+                            ErrorHandlerModule.handleError("Invalid position size");
+                            return;
+                        }
+                        const symbol = ChartDataModule.getCurrentSymbol();
+                        ApiModule.fetchLatestPrice(symbol).then((price) => {
+                            const riskAmount = (TradeModule.getAvailableCapital() * riskPercent) / 100;
+                            const { error } = TradeModule.calculateQuantity(
+                                symbol, positionSize, price, riskAmount, leverage, TradeModule.getMaxLeverage()
+                            );
+                            if (error) {
+                                ErrorHandlerModule.handleError(`Trade not possible: ${error}`);
+                                return;
+                            }
+                            TradeModule.placeOrder(symbol, "BUY", positionSize, leverage, riskPercent);
+                        });
+                    });
+
+                    EventEmitter.on("open-short", () => {
+                        const positionSize = parseFloat(document.getElementById("positionSizeInput").textContent.split(" ")[0]);
+                        const leverage = parseFloat(document.getElementById("leverageInput").value);
+                        const riskPercent = parseFloat(document.getElementById("riskInput").value);
+                        if (!isFinite(positionSize) || positionSize <= 0) {
+                            ErrorHandlerModule.handleError("Invalid position size");
+                            return;
+                        }
+                        const symbol = ChartDataModule.getCurrentSymbol();
+                        ApiModule.fetchLatestPrice(symbol).then((price) => {
+                            const riskAmount = (TradeModule.getAvailableCapital() * riskPercent) / 100;
+                            const { error } = TradeModule.calculateQuantity(
+                                symbol, positionSize, price, riskAmount, leverage, TradeModule.getMaxLeverage()
+                            );
+                            if (error) {
+                                ErrorHandlerModule.handleError(`Trade not possible: ${error}`);
+                                return;
+                            }
+                            TradeModule.placeOrder(symbol, "SELL", positionSize, leverage, riskPercent);
+                        });
+                    });
+
+                    EventEmitter.on("capital-updated", (capital) => {
+                        UiModule.updateBalance(capital);
+                        UiModule.updateTradeInputs(
+                            parseFloat(document.getElementById("riskInput").value),
+                            parseFloat(document.getElementById("leverageInput").value),
+                            capital,
+                            TradeModule.getMaxLeverage()
+                        );
+                    });
+
+                    EventEmitter.on("leverage-updated", () => {
+                        UiModule.updateTradeInputs(
+                            parseFloat(document.getElementById("riskInput").value),
+                            parseFloat(document.getElementById("leverageInput").value),
+                            TradeModule.getAvailableCapital(),
+                            TradeModule.getMaxLeverage()
+                        );
+                    });
+
+                    EventEmitter.on(["order-placed", "position-closed"], async () => {
+                        try {
+                            const positions = await ApiModule.fetchPositions();
+                            await UiModule.renderOpenPositions(positions);
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Failed to load positions: ${error.message}`);
+                        }
+                    });
+
+                    document.getElementById("saveApiButton").addEventListener("click", async () => {
+                        try {
+                            const key = document.getElementById("apiKey").value.trim();
+                            const secret = document.getElementById("apiSecret").value.trim();
+                            const success = await ApiModule.setCredentials(key, secret);
+                            if (success) {
+                                await TradeModule.init();
+                                const positions = await ApiModule.fetchPositions();
+                                await UiModule.renderOpenPositions(positions);
+                                ErrorHandlerModule.handleSuccess("API credentials saved successfully");
+                            } else {
+                                ErrorHandlerModule.handleError("Invalid API credentials");
+                            }
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Error saving API credentials: ${error.message}`);
+                        }
+                    });
+
+                    // NEUE ÄNDERUNG: Trigger Liq-Preis-Update bei jedem Live-Candle-Update
+                    EventEmitter.on("chart-data-updated", () => {
+                        UiModule.updateTradeInputs(
+                            parseFloat(document.getElementById("riskInput").value),
+                            parseFloat(document.getElementById("leverageInput").value),
+                            TradeModule.getAvailableCapital(),
+                            TradeModule.getMaxLeverage()
+                        );
+                    });
+                }
+
+                function initPeriodicUpdates() {
+                    setInterval(async () => {
+                        try {
+                            const positions = await ApiModule.fetchPositions();
+                            await UiModule.renderOpenPositions(positions);
+                        } catch (error) {
+                            ErrorHandlerModule.handleError(`Failed to load positions: ${error.message}`);
+                        }
+                    }, 5000);
+
+                    window.onresize = () => {
+                        ChartModule.rendering.invalidateCache();
+                        ChartModule.requestDraw();
+                    };
+                }
+
+                try {
+                    UiModule.showLoading(true);
+                    const symbols = await initApiAndData();
+                    UiModule.init(symbols);
+                    await initTrade();
+                    await initChart();
+                    initEventListeners(symbols);
+                    initPeriodicUpdates();
+                } catch (error) {
+                    ErrorHandlerModule.handleError(`Initialization failed: ${error.message}`);
+                } finally {
+                    UiModule.showLoading(false);
+                }
+            })();
+        </script>
+    </body>
+</html>
