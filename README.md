@@ -1,7 +1,7 @@
 # Crypto Trading Dashboard
 https://draganito.github.io/Crypto-Trading-Dashboard/
 
-A web-based application for cryptocurrency trading on Binance Futures, featuring interactive charts, technical indicators (RSI, OBV-MACD, MACD), risk management tools, custom scripting for automated trades, and direct order execution.
+A web-based desktop application for cryptocurrency trading on Binance Futures, featuring interactive charts, technical indicators (RSI, OBV-MACD, MACD), risk management tools, custom scripting for automated trades, and direct order execution.
 
 ## Features
 - **Interactive Charts**: Candlestick charts with live price updates, volume bars, and a 55-period SMA overlay.
